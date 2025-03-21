@@ -21,7 +21,8 @@ mongoose.connect(MONGO_URL)
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({credentials: true }));
+app.use(cors({origin: "http://localhost:3000",credentials: true }));
+
 
 // Signup Route
 app.post('/signup', async (req, res) => {
@@ -86,14 +87,17 @@ app.post("/connect-stripe", async (req, res) => {
         stripeAccountId: user.stripeAccountId 
       });
     }
-    const account = await stripe.accounts.create({ type: "express", capabilities: {
+    const account = await stripe.accounts.create({ 
+      type: "express", 
+      capabilities: {
         transfers: { requested: true }
-    } });
+      } 
+    });
     user.stripeAccountId = account.id;
     await user.save();
   
     res.json({ success: true, stripeAccountId: account.id });
-  });
+});
   
   
   
@@ -149,25 +153,141 @@ app.post("/create-project", async (req, res) => {
   });
 
   app.post("/release-payment", async (req, res) => {
-    const { milestoneId } = req.body;
-  
-    const milestone = await Milestone.findById(milestoneId);
-    const project = await Project.findById(milestone.projectId);
-    const freelancer = await User.findOne({username : project.freelancerId});
-    console.log(milestone)
-    await stripe.paymentIntents.capture(milestone.paymentIntentId);
-  
-    await stripe.transfers.create({
-      amount: milestone.amount * 100,
-      currency: "usd",
-      destination: freelancer.stripeAccountId,
-    });
-  
-    await Milestone.findByIdAndUpdate(milestoneId, { status: "paid" });
-  
-    res.json({ success: true, message: "Payment released" });
+    try {
+        const { milestoneId } = req.body;
+      
+        const milestone = await Milestone.findById(milestoneId);
+        if (!milestone) {
+            return res.status(404).json({ success: false, message: "Milestone not found" });
+        }
+        
+        const project = await Project.findById(milestone.projectId);
+        if (!project) {
+            return res.status(404).json({ success: false, message: "Project not found" });
+        }
+        
+        const freelancer = await User.findOne({username: project.freelancerId});
+        if (!freelancer || !freelancer.stripeAccountId) {
+            return res.status(404).json({ success: false, message: "Freelancer Stripe account not found" });
+        }
+        await stripe.paymentIntents.capture(milestone.paymentIntentId);
+        const account = await stripe.accounts.retrieve(freelancer.stripeAccountId);
+        if (!account.capabilities || account.capabilities.transfers !== 'active') {
+            await stripe.accounts.update(freelancer.stripeAccountId, {
+                capabilities: {
+                    transfers: { requested: true }
+                }
+            });
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        const transfer = await stripe.transfers.create({
+          amount: milestone.amount * 100,
+          currency: "usd",
+          destination: freelancer.stripeAccountId,
+        });
+      
+        await Milestone.findByIdAndUpdate(milestoneId, { 
+            status: "paid",
+            transferId: transfer.id 
+        });
+      
+        res.json({ success: true, message: "Payment released", transferId: transfer.id });
+    } catch (error) {
+        console.error("Release payment error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to release payment", 
+            error: error.message 
+        });
+    }
+});
+
+// Get a specific project
+app.get("/project/:projectId", async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const project = await Project.findById(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      // Add title property based on IDs
+      project.title = "Website Redesign"; // Default title, you could query from a different collection
+      
+      res.status(200).json(project);
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      res.status(500).json({ message: "Server error" });
+    }
   });
   
+  // Get milestones for a project
+  app.get("/project/:projectId/milestones", async (req, res) => {
+    try {
+      const { projectId } = req.params;
+      const milestones = await Milestone.find({ projectId });
+      
+      res.status(200).json(milestones);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get user info
+  app.get("/user/:username", verify, async (req, res) => {
+    try {
+      const { username } = req.params;
+      const user = await User.findOne({ username });
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove sensitive info
+      const userInfo = {
+        username: user.username,
+        role: user.role,
+        stripeAccountId: user.stripeAccountId,
+      };
+      
+      res.status(200).json(userInfo);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get all projects for a user
+  app.get("/projects", verify, async (req, res) => {
+    try {
+      const username = req.user.username;
+      const user = await User.findOne({ username });
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      let projects;
+      if (user.role === "client") {
+        projects = await Project.find({ clientId: username });
+      } else {
+        projects = await Project.find({ freelancerId: username });
+      }
+      
+      res.status(200).json(projects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Logout route
+  app.post("/logout", (req, res) => {
+    res.clearCookie("uuid");
+    res.status(200).json({ message: "Logged out successfully" });
+  });
 
 app.listen(PORT, () => {
     console.log(`Server started at port ${PORT}`);
