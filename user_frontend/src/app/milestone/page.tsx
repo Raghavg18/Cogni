@@ -1,199 +1,50 @@
 "use client";
 import { BellIcon, SearchIcon } from "lucide-react";
-import React, { useState, useEffect, JSX } from "react";
+import React, { JSX } from "react";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Progress } from "../../components/ui/progress";
 
 const Milestone = (): JSX.Element => {
-  const [project, setProject] = useState(null);
-  const [milestones, setMilestones] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const projectId = "67dd5d96b49b221b7dfc7e4a"; 
+  // Navigation items
   const navItems = ["Home", "Dashboard", "Jobs", "Reports", "Messages"];
-  const calculateProgress = () => {
-    if (!milestones || milestones.length === 0) return 0;
-    
-    const completedMilestones = milestones.filter(m => m.status === "paid").length;
-    return Math.round((completedMilestones / milestones.length) * 100);
-  };
-  useEffect(() => {
-    const fetchProjectData = async () => {
-      try {
-        setLoading(true);
-        const projectResponse = await fetch(`http://localhost:8000/project/${projectId}`, {
-          credentials: 'include'
-        });
-        
-        if (!projectResponse.ok) {
-          throw new Error('Failed to fetch project data');
-        }
-        
-        const projectData = await projectResponse.json();
-        setProject(projectData);
-        
-        // Fetch milestones
-        const milestonesResponse = await fetch(`http://localhost:8000/project/${projectId}/milestones`, {
-          credentials: 'include'
-        });
-        
-        if (!milestonesResponse.ok) {
-          throw new Error('Failed to fetch milestones');
-        }
-        
-        const milestonesData = await milestonesResponse.json();
-        setMilestones(milestonesData);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProjectData();
-  }, [projectId]);
 
-  // Release payment for a milestone
-  const handleReleasePayment = async (milestoneId: any) => {
-    try {
-      const response = await fetch('http://localhost:8000/release-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ milestoneId })
-      });
+  // Budget data
+  const budgetData = [
+    { title: "Total Budget", amount: "$5,000", color: "text-[#0d141c]" },
+    { title: "Released", amount: "$2,000", color: "text-[#34b233]" },
+    { title: "Remaining", amount: "$3,000", color: "text-[#696969]" },
+  ];
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update milestone status locally
-        setMilestones(milestones.map(m => 
-          m._id === milestoneId ? { ...m, status: "paid" } : m
-        ));
-        
-        console.log("Payment released successfully");
-      } else {
-        console.error("Failed to release payment:", data.message);
-      }
-    } catch (err) {
-      console.error("Error releasing payment:", err);
-    }
-  };
+  // Timeline data
+  const timelineData = [
+    { title: "Job started", date: "Jun 1, 2023", status: "completed" },
+    { title: "Designing", date: "Jun 15, 2023", status: "completed" },
+    { title: "Code Review: 1", date: "July 15, 2023", status: "pending" },
+    { title: "Code Review: 2", date: "July 30, 2023", status: "upcoming" },
+    { title: "Testing", date: "August 10, 2023", status: "upcoming" },
+  ];
 
-  // Calculate budget data based on milestones
-  const getBudgetData = () => {
-    if (!milestones || milestones.length === 0) {
-      return [
-        { title: "Total Budget", amount: "$0", color: "text-[#0d141c]" },
-        { title: "Released", amount: "$0", color: "text-[#34b233]" },
-        { title: "Remaining", amount: "$0", color: "text-[#696969]" },
-      ];
-    }
-
-    const totalAmount = milestones.reduce((sum, m) => sum + m.amount, 0);
-    const releasedAmount = milestones
-      .filter(m => m.status === "paid")
-      .reduce((sum, m) => sum + m.amount, 0);
-    const remainingAmount = totalAmount - releasedAmount;
-
-    return [
-      { title: "Total Budget", amount: `$${totalAmount.toLocaleString()}`, color: "text-[#0d141c]" },
-      { title: "Released", amount: `$${releasedAmount.toLocaleString()}`, color: "text-[#34b233]" },
-      { title: "Remaining", amount: `$${remainingAmount.toLocaleString()}`, color: "text-[#696969]" },
-    ];
-  };
-
-  // Generate timeline data from milestones
-  const getTimelineData = () => {
-    if (!milestones || milestones.length === 0) {
-      return [];
-    }
-
-    // Create a timeline with default stages
-    const timeline = [
-      { title: "Job started", date: "Jun 1, 2023", status: "completed" },
-      ...milestones.map((milestone, index) => {
-        let status = "upcoming";
-        if (milestone.status === "paid") {
-          status = "completed";
-        } else if (milestone.status === "submitted") {
-          status = "pending";
-        }
-        
-        // For demo purposes, generate dates relative to job start
-        const date = new Date(2023, 5, 1); // June 1, 2023
-        date.setDate(date.getDate() + (index + 1) * 15); // Add 15 days per milestone
-        
-        return {
-          title: milestone.description,
-          date: date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-          status
-        };
-      }),
-      { title: "Testing", date: "August 10, 2023", status: "upcoming" }
-    ];
-    
-    return timeline;
-  };
-
-  // Generate milestone cards from milestone data
-  const getMilestoneCards = () => {
-    if (!milestones || milestones.length === 0) {
-      return [];
-    }
-
-    return milestones
-      .filter(m => m.status !== "paid")
-      .slice(0, 2) // For the UI, just show a couple
-      .map((milestone, index) => {
-        let status = "Review";
-        let statusColor = "bg-[#f2ecff]";
-        let iconBg = "bg-[#fff5be]";
-        
-        if (milestone.status === "submitted") {
-          status = "Release";
-          statusColor = "bg-[#ffeca0]";
-        } else if (milestone.status === "pending") {
-          status = "Pending";
-          statusColor = "bg-[#f2ecff]";
-          iconBg = milestone.status === "submitted" ? "bg-[#beffbe]" : "bg-[#fff5be]";
-        }
-        
-        // For demo, generate a date 3 days from now
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 3);
-        
-        return {
-          id: milestone._id,
-          title: `Milestone ${index + 1}: ${milestone.description}`,
-          description: milestone.status === "paid" 
-            ? `Payment was Settled on ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
-            : `Review and release the payment before ${dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
-          status,
-          statusColor,
-          iconBg,
-          milestoneData: milestone
-        };
-      });
-  };
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading project data...</div>;
-  }
-
-  if (error) {
-    return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
-  }
-
-  const progress = calculateProgress();
-  const budgetData = getBudgetData();
-  const timelineData = getTimelineData();
-  const milestoneData = getMilestoneCards();
+  // Milestone data
+  const milestoneData = [
+    {
+      id: 1,
+      title: "Milestone 1: Design",
+      description: "Payment was Settled on Jun 18, 2023",
+      status: "Released",
+      statusColor: "bg-[#f2ecff]",
+      iconBg: "bg-[#beffbe]",
+    },
+    {
+      id: 2,
+      title: "Milestone 2: Code Review: 1",
+      description: "Review and release the payment before July 19, 2023",
+      status: "Release",
+      statusColor: "bg-[#ffeca0]",
+      iconBg: "bg-[#fff5be]",
+    },
+  ];
 
   return (
     <div className="flex flex-col items-start relative bg-white">
@@ -236,7 +87,7 @@ const Milestone = (): JSX.Element => {
 
               <div className="relative w-10 h-10 rounded-[20px] overflow-hidden">
                 <img
-                  src="/api/placeholder/100/100"
+                  src="..//depth-4--frame-2.png"
                   alt="User avatar"
                   className="w-full h-full object-cover"
                 />
@@ -262,9 +113,7 @@ const Milestone = (): JSX.Element => {
                   </div>
 
                   <Badge className="bg-[#ffeca0] text-[#0c141c] rounded-[10px] font-medium">
-                    {milestones.some(m => m.status === "submitted") 
-                      ? "Milestone Review Pending" 
-                      : "In Progress"}
+                    Milestone Review Pending
                   </Badge>
                 </div>
 
@@ -272,7 +121,7 @@ const Milestone = (): JSX.Element => {
                 <div className="w-full">
                   <div className="flex flex-wrap w-full items-start p-4">
                     <h2 className="w-full [font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-[32px] leading-10">
-                      {project?.title || "Website Redesign"}
+                      Website Redesign
                     </h2>
                   </div>
 
@@ -282,13 +131,13 @@ const Milestone = (): JSX.Element => {
                         Progress
                       </span>
                       <span className="[font-family:'Be_Vietnam_Pro',Helvetica] font-normal text-[#0c141c] text-sm">
-                        {progress}%
+                        40%
                       </span>
                     </div>
 
                     <div className="w-full h-2 bg-[#f2ecff] rounded">
                       <Progress
-                        value={progress}
+                        value={40}
                         className="h-2 bg-[#7825ff] rounded"
                       />
                     </div>
@@ -383,7 +232,7 @@ const Milestone = (): JSX.Element => {
               {/* Milestone Cards */}
               <Card className="w-full bg-white rounded-2xl">
                 <CardContent className="p-0">
-                  {milestoneData.map((milestone) => (
+                  {milestoneData.map((milestone, index) => (
                     <div
                       key={milestone.id}
                       className="flex w-full h-[72px] items-center justify-between px-4 py-2"
@@ -392,7 +241,7 @@ const Milestone = (): JSX.Element => {
                         <div
                           className={`flex w-12 h-12 items-center justify-center ${milestone.iconBg} rounded-lg`}
                         >
-                          <div className="relative w-6 h-6 bg-[url(/api/placeholder/24/24)] bg-[100%_100%]" />
+                          <div className="relative w-6 h-6 bg-[url(/vector---0.svg)] bg-[100%_100%]" />
                         </div>
 
                         <div className="flex flex-col justify-center">
@@ -409,27 +258,14 @@ const Milestone = (): JSX.Element => {
                         <Button
                           variant="link"
                           className="h-5 p-0 [font-family:'Be_Vietnam_Pro',Helvetica] font-normal text-[#7825ff] text-xs underline"
-                          onClick={() => {
-                            // View milestone details functionality would go here
-                            console.log("View details for milestone:", milestone.id);
-                          }}
                         >
                           View Details
                         </Button>
-                        {milestone.status === "Release" ? (
-                          <Button
-                            onClick={() => handleReleasePayment(milestone.id)}
-                            className="bg-[#7825ff] text-white rounded-[10px] font-medium"
-                          >
-                            {milestone.status}
-                          </Button>
-                        ) : (
-                          <Badge
-                            className={`${milestone.statusColor} text-[#0c141c] rounded-[10px] font-medium`}
-                          >
-                            {milestone.status}
-                          </Badge>
-                        )}
+                        <Badge
+                          className={`${milestone.statusColor} text-[#0c141c] rounded-[10px] font-medium`}
+                        >
+                          {milestone.status}
+                        </Badge>
                       </div>
                     </div>
                   ))}
