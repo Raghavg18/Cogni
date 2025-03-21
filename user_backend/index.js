@@ -87,7 +87,6 @@ app.post("/connect-stripe", async (req, res) => {
         stripeAccountId: user.stripeAccountId 
       });
     }
-    // Properly set up capabilities when creating the account
     const account = await stripe.accounts.create({ 
       type: "express", 
       capabilities: {
