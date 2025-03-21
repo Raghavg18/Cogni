@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type DisputeStatus = "pending" | "resolved" | "rejected";
+type DisputeStatus = "pending" | "accepted" | "rejected";
 type DisputeType = "payment" | "service" | "other";
 
 interface LocalDispute {
@@ -79,7 +79,7 @@ export default function DisputePage({ params }: DisputePageProps) {
   const handleDisputeAction = () => {
     setLocalDispute((prev) => ({
       ...prev,
-      status: actionType === 'approve' ? 'resolved' : 'rejected',
+      status: actionType === 'approve' ? 'accepted' : 'rejected',
     }));
     setIsActionDialogOpen(false);
   };
@@ -94,25 +94,6 @@ export default function DisputePage({ params }: DisputePageProps) {
         >
           <ArrowLeft className="mr-2" /> Back to Disputes
         </Button>
-
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-[#4f7296] [font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-base">
-            Home
-          </span>
-          <span className="text-[#4f7296] [font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-base">
-            /
-          </span>
-          <span className="text-[#4f7296] [font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-base">
-            Disputes
-          </span>
-          <span className="text-[#4f7296] [font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-base">
-            /
-          </span>
-          <span className="[font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-[#0c141c] text-base">
-            Details
-          </span>
-        </div>
 
         <Card className="border border-[#e5e8ea] rounded-2xl bg-white">
           <CardHeader className="p-6 border-b border-[#e5e8ea]">
@@ -129,7 +110,7 @@ export default function DisputePage({ params }: DisputePageProps) {
                 className={`rounded-[10px] font-medium ${
                   localDispute.status === "pending"
                     ? "bg-[#ffeca0] text-[#0c141c]"
-                    : localDispute.status === "resolved"
+                    : localDispute.status === "accepted"
                     ? "bg-[#beffbe] text-[#0c141c]"
                     : "bg-[#ffd4d4] text-[#991b1b]"
                 }`}
@@ -220,7 +201,7 @@ export default function DisputePage({ params }: DisputePageProps) {
                   className="bg-[#7825ff] hover:bg-[#6420cc] text-white rounded-xl cursor-pointer"
                 >
                   <Check className="w-4 h-4 mr-2" />
-                  Resolve Dispute
+                  Accept Dispute
                 </Button>
               </div>
             )}
@@ -231,10 +212,10 @@ export default function DisputePage({ params }: DisputePageProps) {
           <DialogContent className="bg-white border border-[#e5e8ea] rounded-2xl">
             <DialogHeader>
               <DialogTitle className="[font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-lg">
-                {actionType === 'approve' ? 'Resolve Dispute' : 'Reject Dispute'}
+                {actionType === 'approve' ? 'Accept Dispute' : 'Reject Dispute'}
               </DialogTitle>
               <DialogDescription className="[font-family:'Be_Vietnam_Pro',Helvetica] text-[#4f7296]">
-                Are you sure you want to {actionType === 'approve' ? 'resolve' : 'reject'} this dispute? This action cannot be undone.
+                Are you sure you want to {actionType === 'approve' ? 'accept' : 'reject'} this dispute? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-3">
@@ -253,7 +234,7 @@ export default function DisputePage({ params }: DisputePageProps) {
                     : 'bg-[#fff1f1] border-[#ffd4d4] text-[#991b1b] hover:bg-[#ffd4d4]'
                 } rounded-xl cursor-pointer transition-colors duration-200`}
               >
-                {actionType === 'approve' ? 'Resolve' : 'Reject'} Dispute
+                {actionType === 'approve' ? 'Accept' : 'Reject'} Dispute
               </Button>
             </DialogFooter>
           </DialogContent>
