@@ -23,6 +23,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({credentials: true }));
 
+
 // Signup Route
 app.post('/signup', async (req, res) => {
     try {
@@ -86,14 +87,18 @@ app.post("/connect-stripe", async (req, res) => {
         stripeAccountId: user.stripeAccountId 
       });
     }
-    const account = await stripe.accounts.create({ type: "express", capabilities: {
+    // Properly set up capabilities when creating the account
+    const account = await stripe.accounts.create({ 
+      type: "express", 
+      capabilities: {
         transfers: { requested: true }
-    } });
+      } 
+    });
     user.stripeAccountId = account.id;
     await user.save();
   
     res.json({ success: true, stripeAccountId: account.id });
-  });
+});
   
   
   
@@ -149,24 +154,54 @@ app.post("/create-project", async (req, res) => {
   });
 
   app.post("/release-payment", async (req, res) => {
-    const { milestoneId } = req.body;
-  
-    const milestone = await Milestone.findById(milestoneId);
-    const project = await Project.findById(milestone.projectId);
-    const freelancer = await User.findOne({username : project.freelancerId});
-    console.log(milestone)
-    await stripe.paymentIntents.capture(milestone.paymentIntentId);
-  
-    await stripe.transfers.create({
-      amount: milestone.amount * 100,
-      currency: "usd",
-      destination: freelancer.stripeAccountId,
-    });
-  
-    await Milestone.findByIdAndUpdate(milestoneId, { status: "paid" });
-  
-    res.json({ success: true, message: "Payment released" });
-  });
+    try {
+        const { milestoneId } = req.body;
+      
+        const milestone = await Milestone.findById(milestoneId);
+        if (!milestone) {
+            return res.status(404).json({ success: false, message: "Milestone not found" });
+        }
+        
+        const project = await Project.findById(milestone.projectId);
+        if (!project) {
+            return res.status(404).json({ success: false, message: "Project not found" });
+        }
+        
+        const freelancer = await User.findOne({username: project.freelancerId});
+        if (!freelancer || !freelancer.stripeAccountId) {
+            return res.status(404).json({ success: false, message: "Freelancer Stripe account not found" });
+        }
+        await stripe.paymentIntents.capture(milestone.paymentIntentId);
+        const account = await stripe.accounts.retrieve(freelancer.stripeAccountId);
+        if (!account.capabilities || account.capabilities.transfers !== 'active') {
+            await stripe.accounts.update(freelancer.stripeAccountId, {
+                capabilities: {
+                    transfers: { requested: true }
+                }
+            });
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        const transfer = await stripe.transfers.create({
+          amount: milestone.amount * 100,
+          currency: "usd",
+          destination: freelancer.stripeAccountId,
+        });
+      
+        await Milestone.findByIdAndUpdate(milestoneId, { 
+            status: "paid",
+            transferId: transfer.id 
+        });
+      
+        res.json({ success: true, message: "Payment released", transferId: transfer.id });
+    } catch (error) {
+        console.error("Release payment error:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to release payment", 
+            error: error.message 
+        });
+    }
+});
   
 
 app.listen(PORT, () => {
