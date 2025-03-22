@@ -1,26 +1,40 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import MilestoneHeader from "@/components/milestone/MilestoneHeader";
 import ProjectHeader from "@/components/milestone/ProjectHeader";
 import BudgetCards from "@/components/milestone/BudgetCard";
 import MilestoneTimeline from "@/components/milestone/MilestoneTimeline";
 import MilestoneContainer from "@/components/milestone/MilestoneContainer"; // Import our updated component
 import axios from "axios";
 import { useParams } from "next/navigation";
+import Header from "@/components/layout/Header";
 
-// Main MilestonePage Component
+interface Milestone {
+  status: string;
+  amount: string;
+  description?: string;
+  date?: string;
+}
+
+interface ProjectData {
+  name: string;
+  status: string;
+}
+
 const MilestonePage = () => {
   const [showAddMilestoneModal, setShowAddMilestoneModal] = useState(false);
-  const [projectData, setProjectData] = useState(null);
-  const [milestones, setMilestones] = useState([]);
+  const [projectData, setProjectData] = useState<ProjectData | null>(null);
+
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
   const params = useParams();
 
   const getProjectDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8000/project/${params.projectId}`);
-      
+      const response = await axios.get(
+        `http://localhost:8000/project/${params.projectId}`
+      );
+
       if (response.data) {
         setProjectData(response.data.project);
         setMilestones(response.data.milestones || []);
@@ -39,53 +53,62 @@ const MilestonePage = () => {
   // Calculate progress based on milestone statuses
   const calculateProgress = () => {
     if (!milestones || milestones.length === 0) return 0;
-    
+
     const completedMilestones = milestones.filter(
-      milestone => milestone.status === "paid" || milestone.status === "completed"
+      (milestone) =>
+        milestone.status === "paid" || milestone.status === "completed"
     ).length;
-    
+
     return Math.floor((completedMilestones / milestones.length) * 100);
   };
 
   // Calculate budget information
   const calculateBudgets = () => {
     if (!projectData) return { total: "$0", released: "$0", remaining: "$0" };
-    
-    const totalBudget = milestones.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
-    
+
+    const totalBudget = milestones.reduce(
+      (sum, m) => sum + (parseFloat(m.amount) || 0),
+      0
+    );
+
     // Fix: Only consider "completed" and "paid" milestones as released
     const releasedAmount = milestones
-      .filter(m => m.status === "completed" || m.status === "paid")
+      .filter((m) => m.status === "completed" || m.status === "paid")
       .reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
-    
+
     const remainingAmount = totalBudget - releasedAmount;
-    
+
     return {
       total: `$${totalBudget.toLocaleString()}`,
       released: `$${releasedAmount.toLocaleString()}`,
-      remaining: `$${remainingAmount.toLocaleString()}`
+      remaining: `$${remainingAmount.toLocaleString()}`,
     };
   };
 
   // Format milestones for timeline display
   const formatTimelineItems = () => {
     if (!milestones || milestones.length === 0) return [];
-    
+
     return milestones.map((milestone, index) => {
       // Convert status from API to timeline format
-      let status = "upcoming";
-      if (milestone.status === "completed" || milestone.status === "paid") status = "completed";
+      let status: "upcoming" | "completed" | "inProgress" = "upcoming";
+      if (milestone.status === "completed" || milestone.status === "paid")
+        status = "completed";
       else if (milestone.status === "submitted") status = "inProgress";
-      
+
       // Create a dummy date if not available
-      const date = milestone.date 
-        ? new Date(milestone.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      const date = milestone.date
+        ? new Date(milestone.date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
         : `Milestone ${index + 1}`;
-      
+
       return {
         title: milestone.description || `Milestone ${index + 1}`,
         date: date,
-        status: status
+        status: status,
       };
     });
   };
@@ -111,7 +134,7 @@ const MilestonePage = () => {
     <div className="bg-white">
       <div className="bg-[rgba(247,250,252,1)] min-h-[1736px] w-full overflow-hidden max-md:max-w-full">
         <div className="w-full max-md:max-w-full">
-          <MilestoneHeader />
+          <Header />
           <div className="flex w-full justify-center flex-1 h-full px-40 py-5 max-md:max-w-full max-md:px-5">
             <div className="min-w-60 w-full max-w-[960px] overflow-hidden flex-1 shrink basis-[0%] max-md:max-w-full">
               <ProjectHeader
@@ -131,7 +154,11 @@ const MilestonePage = () => {
               <MilestoneContainer
                 milestones={milestones}
                 onAddMilestone={handleAddMilestone}
-                projectId={params.projectId}
+                projectId={
+                  Array.isArray(params.projectId)
+                    ? params.projectId[0]
+                    : params.projectId
+                }
               />
             </div>
           </div>
@@ -142,4 +169,3 @@ const MilestonePage = () => {
 };
 
 export default MilestonePage;
-

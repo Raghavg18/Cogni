@@ -12,7 +12,7 @@ const PageTitle: React.FC<PageTitleProps> = ({
   onAction,
 }) => {
   return (
-    <div className="flex items-center justify-between py-4">
+    <div className="flex items-center justify-between py-4 px-4">
       <h1 className="text-3xl font-bold text-[rgba(13,20,28,1)]">{title}</h1>
       {actionLabel && (
         <button
