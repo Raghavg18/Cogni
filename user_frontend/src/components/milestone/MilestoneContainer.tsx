@@ -168,7 +168,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   };
 
   // Retry payment release after successful authentication
-  const retryPaymentRelease = async (milestoneId) => {
+  const retryPaymentRelease = async (milestoneId: string) => {
     try {
       setIsReleasing(true);
       setError("Payment authenticated. Releasing payment...");
@@ -201,7 +201,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   };
 
   // Handle freelancer account setup if needed
-  const handleStripeAccountSetup = (accountLink) => {
+  const handleStripeAccountSetup = (accountLink: string) => {
     if (accountLink) {
       window.location.href = accountLink;
     }

@@ -118,7 +118,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
   );
 };
 
-const MilestoneContainer: React.FC = (projectId) => {
+const MilestoneContainer: React.FC = (projectId ) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
   const [project, setProject] = useState<Project | null>(null);

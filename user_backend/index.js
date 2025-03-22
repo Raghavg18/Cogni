@@ -588,6 +588,65 @@ app.get("/check-stripe-status/:username", async (req, res) => {
   }
 });
 
+// Get all projects for a specific freelancer
+app.get("/freelancer-projects/:freelancerId", async (req, res) => {
+  try {
+    const { freelancerId } = req.params;
+    
+    if (!freelancerId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Freelancer ID is required" 
+      });
+    }
+
+    // Find all projects assigned to this freelancer
+    const projects = await Project.find({ freelancerId });
+    
+    // For each project, get its milestones
+    const projectsWithMilestones = await Promise.all(projects.map(async (project) => {
+      const milestones = await Milestone.find({ projectId: project._id });
+      
+      // Calculate completion percentage based on milestones
+      const totalMilestones = milestones.length;
+      const completedMilestones = milestones.filter(
+        m => m.status === "paid" || m.status === "submitted"
+      ).length;
+      
+      const completionPercentage = totalMilestones > 0 
+        ? Math.round((completedMilestones / totalMilestones) * 100) 
+        : 0;
+      
+      // Calculate total project value from milestones
+      const totalAmount = milestones.reduce((sum, milestone) => sum + milestone.amount, 0);
+      
+      return {
+        id: project._id,
+        name: project.name,
+        description: project.description,
+        clientId: project.clientId,
+        freelancerId: project.freelancerId,
+        completed: completionPercentage,
+        amount: totalAmount,
+        createdAt: project.createdAt,
+        milestones
+      };
+    }));
+    
+    res.status(200).json({
+      success: true,
+      projects: projectsWithMilestones
+    });
+  } catch (error) {
+    console.error("Error fetching freelancer projects:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
+  }
+});
+
 // Logout route
 app.post("/logout", (req, res) => {
   res.clearCookie("uuid");
