@@ -37,11 +37,9 @@ const Page = () => {
         console.log(username)
         const response = await axios.get(`http://localhost:8000/client-projects/${username}`,{withCredentials: true})
         
-        if (!response) {
-          throw new Error('Failed to fetch projects');
-        }
-        const data = await response.json();
-        setProjects(data.projects);
+        // The main error: response data is already parsed by axios
+        // No need to call response.json()
+        setProjects(response.data.projects);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
         console.error('Error fetching projects:', err);
@@ -98,8 +96,8 @@ const Page = () => {
               {projects.map((project) => (
                 <div 
                   key={project.id} 
-                  className="p-6 hover:bg-[#f7f9fc] transition-colors duration-200"
-                  // onClick={()=>{router.push("/client-dashboard/"+project.id)}}
+                  className="p-6 hover:bg-[#f7f9fc] transition-colors duration-200 cursor-pointer"
+                  onClick={()=>{router.push("/client-dashboard/"+project.id)}}
                 >
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div className="flex-1">
