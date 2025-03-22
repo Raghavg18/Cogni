@@ -2,20 +2,20 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 const StripeOnboardingPage = () => {
-  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [stripeStatus, setStripeStatus] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const router = useRouter();
+  const {isClient,username} = useAuth()
 
   // Get username from localStorage or query params on component mount
   useEffect(() => {
-    const storedUsername = "anish3"
+    const storedUsername = username
     if (storedUsername) {
-      setUsername(storedUsername);
       checkStripeStatus(storedUsername);
     }
   }, []);

@@ -1,16 +1,23 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
+import { FormEvent } from "react";
 
 interface props {
   signup?: boolean;
-  onSubmit?: () => void;
+  onSubmit?: (e: FormEvent<HTMLFormElement>) => void;
   redirectTo: string;
 }
 
 const Form = ({ signup, onSubmit, redirectTo }: props) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (onSubmit) {
+      onSubmit(e);
+    }
+  };
+
   return (
     <>
-      <form onSubmit={onSubmit} className="w-[358px] flex flex-col gap-6">
+      <form onSubmit={handleSubmit} className="w-[358px] flex flex-col gap-6">
         {signup && (
           <div>
             <label htmlFor="name">Name</label>
@@ -76,7 +83,7 @@ const Form = ({ signup, onSubmit, redirectTo }: props) => {
           type="submit"
           className="w-full rounded-lg bg-[#7925FF] font-bold text-white py-3.5"
         >
-          Create Account
+          {signup ? "Create Account" : "Login"}
         </button>
       </form>
       <div className="text-center w-[358px]">
@@ -95,7 +102,7 @@ const Form = ({ signup, onSubmit, redirectTo }: props) => {
       {signup && (
         <p className="text-[10px] text-[#9C9AA5] text-center w-[358px]">
           By signing up to create an account I accept <br />
-          Company’s{" "}
+          Company's{" "}
           <span className="text-black">Terms of use & Privacy Policy.</span>
         </p>
       )}
