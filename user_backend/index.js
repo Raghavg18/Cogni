@@ -589,19 +589,19 @@ app.get("/check-stripe-status/:username", async (req, res) => {
 });
 
 // Get all projects for a specific freelancer
-app.get("/freelancer-projects/:freelancerId", async (req, res) => {
+app.get("/client-projects/:clientId", async (req, res) => {
   try {
-    const { freelancerId } = req.params;
+    const { clientId } = req.params;
     
-    if (!freelancerId) {
+    if (!clientId) {
       return res.status(400).json({ 
         success: false, 
-        message: "Freelancer ID is required" 
+        message: "Client ID is required" 
       });
     }
 
     // Find all projects assigned to this freelancer
-    const projects = await Project.find({ freelancerId });
+    const projects = await Project.find({ clientId });
     
     // For each project, get its milestones
     const projectsWithMilestones = await Promise.all(projects.map(async (project) => {

@@ -1,5 +1,6 @@
 'use client';
 import { useAuth } from '@/app/context/AuthContext';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -28,25 +29,17 @@ const Page = () => {
   const [error, setError] = useState<string | null>(null);
   const {username} = useAuth()
   const router = useRouter()
-  const freelancerId = username; // Replace with actual freelancer ID from auth context
   
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:8000/freelancer-projects/${freelancerId}`, {
-          method: 'GET',
-          credentials: 'include', // Important for cookies
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        console.log(username)
+        const response = await axios.get(`http://localhost:8000/client-projects/${username}`,{withCredentials: true})
         
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch projects');
+        if (!response) {
+          throw new Error('Failed to fetch projects');
         }
-        
         const data = await response.json();
         setProjects(data.projects);
       } catch (err) {
@@ -58,7 +51,7 @@ const Page = () => {
     };
     
     fetchProjects();
-  }, [freelancerId]);
+  }, [username]);
 
   // Helper function to get progress bar color
   const getProgressColor = (completed: number) => {
@@ -106,7 +99,7 @@ const Page = () => {
                 <div 
                   key={project.id} 
                   className="p-6 hover:bg-[#f7f9fc] transition-colors duration-200"
-                  onClick={()=>{router.push("/client-dashboard/"+project.id)}}
+                  // onClick={()=>{router.push("/client-dashboard/"+project.id)}}
                 >
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div className="flex-1">

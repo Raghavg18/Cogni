@@ -55,7 +55,7 @@ const Page = () => {
       if(!isClient){
         router.push("/onboarding");}
       else{
-        router.push("/dashboard")
+        router.push("/client-dashboard/milestone-tracker")
       }
     } catch (err) {
       if (err instanceof Error) {

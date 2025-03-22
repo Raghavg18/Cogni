@@ -1,14 +1,21 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@/components/layout/Header";
 import PageTitle from "@/components/jobs/PageTitle";
 import { Milestone } from "@/components/jobs/MilestoneTimeline";
 import { XCircle } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
 
 const CreateJob: React.FC = () => {
   const router = useRouter();
+  const {isClient,username} = useAuth()
+  useEffect(()=>{
+    if(!isClient){
+      router.push('/freelancer-dashboard')
+    }
+  },[])
   // Project details state
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -49,6 +56,7 @@ const CreateJob: React.FC = () => {
       name: projectTitle,
       description: projectDescription,
       milestones: milestones,
+      clientId: username
     };
     const response = await axios.post(
       "http://localhost:8000/create-project",
