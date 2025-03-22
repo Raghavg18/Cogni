@@ -51,9 +51,14 @@ const Page = () => {
 
       // Redirect to login page on successful signup
       router.push("/login");
-    } catch (err: any) {
-      setError(err.message || "An error occurred during signup");
-      console.error("Signup error:", err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "An error occurred during signup");
+        console.error("Signup error:", err);
+      } else {
+        setError("An unknown error occurred during signup");
+        console.error("Signup error:", err);
+      }
     } finally {
       setLoading(false);
     }
