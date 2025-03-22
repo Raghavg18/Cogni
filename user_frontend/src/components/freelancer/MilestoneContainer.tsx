@@ -1,11 +1,26 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 
 interface TimelineItemProps {
   title: string;
   date: string;
   status: "completed" | "active" | "pending";
   isLast?: boolean;
+}
+
+interface BudgetCardProps {
+  title: string;
+  amount: string;
+  textColor?: string;
+}
+
+interface MilestoneSubmissionData {
+  repositoryUrl: string;
+  hostingUrl: string;
+  externalFiles: string;
+  notes: string;
+  budget: number;
+  images: File[];
 }
 
 const TimelineItem: React.FC<TimelineItemProps> = ({
@@ -59,12 +74,6 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
   );
 };
 
-interface BudgetCardProps {
-  title: string;
-  amount: string;
-  textColor?: string;
-}
-
 const BudgetCard: React.FC<BudgetCardProps> = ({
   title,
   amount,
@@ -84,11 +93,336 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
   );
 };
 
-// Main MilestoneContainer component
 const MilestoneContainer: React.FC = () => {
+  const ImageUploadZone: React.FC<{
+    onImageUpload: (files: File[]) => void;
+    images: File[];
+  }> = ({ onImageUpload, images }) => {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDrag = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleDragIn = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+
+    const handleDragOut = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/")
+      );
+
+      if (files.length > 0) {
+        onImageUpload(files);
+      }
+    };
+
+    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files?.length) {
+        const files = Array.from(e.target.files).filter((file) =>
+          file.type.startsWith("image/")
+        );
+        onImageUpload(files);
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        <div
+          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
+            ${
+              isDragging
+                ? "border-[rgba(121,37,255,1)] bg-[rgba(242,236,255,1)]"
+                : "border-gray-300"
+            }
+            hover:border-[rgba(121,37,255,1)] transition-colors`}
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById("fileInput")?.click()}
+        >
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileInput}
+          />
+          <div className="flex flex-col items-center gap-2">
+            <svg
+              className="w-8 h-8 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <p className="text-sm text-gray-600">
+              Drag and drop images here, or click to select files
+            </p>
+          </div>
+        </div>
+
+        {images.length > 0 && (
+          <div className="grid grid-cols-4 gap-4">
+            {images.map((file, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt={`Preview ${index + 1}`}
+                  className="w-full h-24 object-cover rounded-lg"
+                />
+                <button
+                  onClick={() => {
+                    const newImages = [...images];
+                    newImages.splice(index, 1);
+                    onImageUpload(newImages);
+                  }}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 
+                    opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const SubmitMilestoneModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (data: MilestoneSubmissionData) => void;
+  }> = ({ isOpen, onClose, onSubmit }) => {
+    const [formData, setFormData] = useState<MilestoneSubmissionData>({
+      repositoryUrl: "",
+      hostingUrl: "",
+      externalFiles: "",
+      notes: "",
+      budget: 0,
+      images: [],
+    });
+
+    if (!isOpen) return null;
+
+    const handleImageUpload = (files: File[]) => {
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...files],
+      }));
+    };
+
+    const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
+      try {
+        const formData = new FormData();
+
+        // Append regular data
+        formData.append("repositoryUrl", data.repositoryUrl);
+        formData.append("hostingUrl", data.hostingUrl);
+        formData.append("externalFiles", data.externalFiles);
+        formData.append("notes", data.notes);
+        formData.append("budget", data.budget.toString());
+
+        data.images.forEach((image, index) => {
+          formData.append(`image${index}`, image);
+        });
+
+        const response = await fetch("/api/milestones/submit", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to submit milestone");
+        }
+
+        setIsModalOpen(false);
+      } catch (error) {
+        console.error("Error submitting milestone:", error);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-[#00000060] bg-opacity-10 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <h2 className="text-xl font-bold mb-4">Submit Milestone</h2>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSubmit(formData);
+            }}
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Repository URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.repositoryUrl}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      repositoryUrl: e.target.value,
+                    }))
+                  }
+                  className="w-full border rounded-lg p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Hosting URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.hostingUrl}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      hostingUrl: e.target.value,
+                    }))
+                  }
+                  className="w-full border rounded-lg p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  External Files
+                </label>
+                <input
+                  type="text"
+                  value={formData.externalFiles}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      externalFiles: e.target.value,
+                    }))
+                  }
+                  className="w-full border rounded-lg p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, notes: e.target.value }))
+                  }
+                  className="w-full border rounded-lg p-2 min-h-[100px]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Budget</label>
+                <input
+                  type="number"
+                  value={formData.budget}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      budget: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full border rounded-lg p-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Upload Images
+                </label>
+                <ImageUploadZone
+                  onImageUpload={handleImageUpload}
+                  images={formData.images}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-4 mt-6">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90"
+              >
+                Submit
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  // Modify the MilestoneContainer component by adding these lines after the existing state declarations
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Replace the existing handleSubmit function with this:
   const handleSubmit = () => {
-    // Handle milestone submission logic here
-    alert("Submitting milestone...");
+    setIsModalOpen(true);
+  };
+
+  const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
+    try {
+      const response = await fetch("/api/milestones/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit milestone");
+      }
+
+      setIsModalOpen(false);
+      // Add success notification here if needed
+    } catch (error) {
+      console.error("Error submitting milestone:", error);
+      // Add error notification here if needed
+    }
   };
 
   const timelineItems = [
@@ -245,6 +579,11 @@ const MilestoneContainer: React.FC = () => {
           </div>
         </button>
       </div>
+      <SubmitMilestoneModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleMilestoneSubmit}
+      />
     </div>
   );
 };
