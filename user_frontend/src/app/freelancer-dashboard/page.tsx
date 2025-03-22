@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation"; // Add this import
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search } from "lucide-react";
 
@@ -16,59 +16,44 @@ interface Job {
   };
 }
 
-const testJobs: Job[] = [
-  {
-    id: "1",
-    title: "E-commerce Website Development",
-    progress: 75,
-    totalBudget: 5000,
-    receivedAmount: 3750,
-    milestones: {
-      total: 4,
-      completed: 3
-    }
-  },
-  {
-    id: "2",
-    title: "Mobile App UI/UX Design",
-    progress: 25,
-    totalBudget: 3000,
-    receivedAmount: 750,
-    milestones: {
-      total: 3,
-      completed: 1
-    }
-  },
-  {
-    id: "3",
-    title: "Custom CRM Development",
-    progress: 50,
-    totalBudget: 8000,
-    receivedAmount: 4000,
-    milestones: {
-      total: 6,
-      completed: 3
-    }
-  },
-  {
-    id: "4",
-    title: "WordPress Theme Customization",
-    progress: 90,
-    totalBudget: 2000,
-    receivedAmount: 1800,
-    milestones: {
-      total: 2,
-      completed: 2
-    }
-  }
-];
-
 export default function FreelancerDashboard() {
-  const router = useRouter(); // Add this line
-  // Replace the useState initialization with the test data
-  const jobs: Job[] = testJobs;
+  const router = useRouter();
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const loading = true;
+  const [loading, setLoading] = useState(true);
+
+  // Fetch jobs from API
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        // Get the username from localStorage or context
+        // For this example, I'll hardcode a username, but you should replace this with actual authentication
+        const username = localStorage.getItem('username') || 'defaultFreelancerUsername';
+        
+        const response = await fetch(`http://localhost:8000/freelancer-projects/${username}`, {
+          method: 'GET',
+          credentials: 'include', // Important for cookies
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setJobs(data.projects);
+        } else {
+          console.error("Failed to fetch projects:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   const getProgressColor = (progress: number) => {
     if (progress < 30) return 'bg-[#ffeca0]';

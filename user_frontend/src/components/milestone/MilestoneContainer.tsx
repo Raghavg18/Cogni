@@ -132,7 +132,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   };
 
   // Handle 3D Secure authentication
-  const handleStripeAction = async (paymentData) => {
+  const handleStripeAction = async (paymentData: { payment_intent_client_secret: string; }) => {
     try {
       setProcessingAction(true);
       setError("Payment requires additional authentication. Please don't close this window.");
@@ -168,7 +168,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   };
 
   // Retry payment release after successful authentication
-  const retryPaymentRelease = async (milestoneId) => {
+  const retryPaymentRelease = async (milestoneId: string) => {
     try {
       setIsReleasing(true);
       setError("Payment authenticated. Releasing payment...");
@@ -201,7 +201,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   };
 
   // Handle freelancer account setup if needed
-  const handleStripeAccountSetup = (accountLink) => {
+  const handleStripeAccountSetup = (accountLink: string) => {
     if (accountLink) {
       window.location.href = accountLink;
     }
