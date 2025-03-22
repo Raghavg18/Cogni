@@ -209,17 +209,20 @@ app.post("/fund-escrow", async (req, res) => {
   const project = await Project.findById(projectId);
   if (!project) return res.status(404).json({ message: "Project not found" });
 
+  // Create and immediately capture the payment from client
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amount * 100,
     currency: "usd",
     payment_method: paymentMethodId,
     confirm: true,
-    capture_method: "manual",
+    // Remove capture_method: "manual" to charge immediately
     automatic_payment_methods: {
       enabled: true,
       allow_redirects: "never",
     },
+    description: `Escrow funding for Project: ${project.name}`,
   });
+  
   await Milestone.updateMany(
     { projectId: projectId, status: "pending" },
     { $set: { paymentIntentId: paymentIntent.id } }
