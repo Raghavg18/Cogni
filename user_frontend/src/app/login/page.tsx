@@ -1,6 +1,5 @@
 "use client";
 import Panel from "@/components/LoginSignup/Panel";
-import Current from "@/components/LoginSignup/Current";
 import Logo from "@/components/LoginSignup/Logo";
 import Form from "@/components/LoginSignup/Form";
 import { useState, FormEvent } from "react";
@@ -8,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext"; // Import the auth hook
 
 const Page = () => {
-  const [isClient, setIsClient] = useState<0 | 1>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -47,15 +45,20 @@ const Page = () => {
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
+      console.log(data)
+      // Get the user role from the response data
+      const userRole = data.role; // Assuming your API returns the role
+      const isClient = userRole === "client";
 
       // Store user info in the global context
-      setAuth(email, Boolean(isClient));
+      setAuth(email, isClient); 
       
-      // Redirect to dashboard or home page on successful login
-      if(!isClient){
-        router.push("/onboarding");}
-      else{
-        router.push("/client-dashboard/milestone-tracker")
+      // Redirect based on user role
+      if (userRole === "freelancer") {
+        router.push("/onboarding");
+      } else {
+        // Assume client by default
+        router.push("/client-dashboard/milestone-tracker");
       }
     } catch (err) {
       if (err instanceof Error) {
@@ -82,7 +85,6 @@ const Page = () => {
       <div className="pt-44 pb-11 pr-28 pl-14">
         <Logo />
         <div className="flex flex-col gap-6">
-          <Current isClient={isClient} setIsClient={setIsClient} />
           {error && (
             <div className="text-red-500 text-sm">
               {error}

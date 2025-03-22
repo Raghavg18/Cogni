@@ -783,7 +783,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
           <div className="flex flex-wrap gap-4">
             {milestones
               .filter(m => m.status === "pending")
-              .map(milestone => (
+              .map((milestone) => (
                 <button 
                   onClick={() => {
                     setSelectedMilestoneId(milestone._id);

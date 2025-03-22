@@ -160,7 +160,7 @@ app.post("/login", async (req, res) => {
     });
     res
       .status(200)
-      .json({ message: "Login successful", username: user.username });
+      .json({ message: "Login successful", username: user.username, role: username.role });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
