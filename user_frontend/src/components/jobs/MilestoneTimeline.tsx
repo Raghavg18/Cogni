@@ -3,8 +3,10 @@ import React from "react";
 export interface Milestone {
   title: string;
   date: string;
+  description?: string;
   completed: boolean;
   isLast?: boolean;
+  amount?: string;
 }
 
 interface MilestoneTimelineProps {
