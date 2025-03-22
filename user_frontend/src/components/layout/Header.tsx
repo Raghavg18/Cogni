@@ -14,16 +14,10 @@ const Header: React.FC = () => {
       </div>
       <div className="self-stretch flex min-w-60 gap-8 flex-wrap flex-1 shrink basis-[0%] my-auto max-md:max-w-full ml-auto">
         <div className="flex min-w-60 min-h-10 items-center gap-9 text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap ml-auto">
-          <Link href="/" className="self-stretch w-[41px] my-auto">
-            Home
-          </Link>
-          <Link href="/dashboard" className="self-stretch my-auto">
+          <Link href="/freelancer-dashboard" className="self-stretch my-auto">
             Dashboard
           </Link>
-          <Link href="/jobs" className="self-stretch my-auto">
-            Jobs
-          </Link>
-          <Link href="/messages" className="self-stretch my-auto">
+          <Link href="/chat" className="self-stretch my-auto">
             Messages
           </Link>
         </div>
