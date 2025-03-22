@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "@radix-ui/react-toast": "^1.2.6",
-    "@types/tailwindcss": "^3.0.11",
-    "react-router-dom": "^7.4.0",
-    "tailwindcss": "^4.0.15"
-  }
-}
