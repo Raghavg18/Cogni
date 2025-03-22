@@ -1,21 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import io from "socket.io-client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Search, MoreVertical, Phone, Video } from "lucide-react";
+import { Send, Search } from "lucide-react";
+
+const socket = io("http://localhost:8000");
 
 interface Message {
-  id: number;
+  id?: number;
   content: string;
   sender: string;
   timestamp: string;
 }
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   avatar: string;
   lastMessage: string;
@@ -24,75 +27,83 @@ interface User {
 
 const users: User[] = [
   {
-    id: 1,
+    id: "user1",
     name: "Sarah Wilson",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
     lastMessage: "See you tomorrow!",
     online: true,
   },
   {
-    id: 2,
+    id: "user2",
     name: "Michael Chen",
     avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36",
     lastMessage: "Thanks for your help",
     online: true,
   },
   {
-    id: 3,
+    id: "user3",
     name: "Emma Thompson",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80",
     lastMessage: "Great idea!",
     online: false,
   },
-  {
-    id: 4,
-    name: "James Rodriguez",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-    lastMessage: "Let's meet next week",
-    online: true,
-  },
 ];
 
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    content: "Hi there! How are you?",
-    sender: "Sarah Wilson",
-    timestamp: "09:30 AM",
-  },
-  {
-    id: 2,
-    content: "I'm doing great, thanks! How about you?",
-    sender: "me",
-    timestamp: "09:31 AM",
-  },
-  {
-    id: 3,
-    content: "Pretty good! Just working on some new projects.",
-    sender: "Sarah Wilson",
-    timestamp: "09:32 AM",
-  },
-];
-
-export default function Home() {
-  const [selectedUser, setSelectedUser] = useState(users[0]);
-  const [messages, setMessages] = useState(initialMessages);
+export default function Chat() {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const currentUser = "me"; // Replace with actual authenticated user ID
+
+  // Fetch messages from the backend when a user is selected
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    fetch(`http://localhost:8000/${currentUser}/${selectedUser.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        setMessages(data); // Set messages when chat is loaded
+      })
+      .catch((err) => console.error("Error fetching messages:", err));
+  }, [selectedUser]);
+
+  // Listen for real-time messages
+  useEffect(() => {
+    socket.on("receiveMessage", (message: Message) => {
+      // Only update messages if it is for the currently selected chat
+      if (
+        message.sender === selectedUser?.id ||
+        message.sender === currentUser
+      ) {
+        setMessages((prevMessages) => [...prevMessages, message]);
+      }
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+    };
+  }, [selectedUser]);
 
   const sendMessage = () => {
-    if (newMessage.trim()) {
-      setMessages([
-        ...messages,
-        {
-          id: messages.length + 1,
-          content: newMessage,
-          sender: "me",
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
+    if (newMessage.trim() && selectedUser) {
+      const message: Message = {
+        content: newMessage,
+        sender: currentUser,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      // Emit message to server
+      socket.emit("sendMessage", {
+        sender: currentUser,
+        receiver: selectedUser.id,
+        content: newMessage,
+      });
+
+      setMessages((prev) => [...prev, message]); // Update messages locally
       setNewMessage("");
     }
   };
@@ -112,7 +123,7 @@ export default function Home() {
             <div
               key={user.id}
               className={`p-4 cursor-pointer hover:bg-accent flex items-center gap-3 ${
-                selectedUser.id === user.id ? "bg-accent" : ""
+                selectedUser?.id === user.id ? "bg-accent" : ""
               }`}
               onClick={() => setSelectedUser(user)}
             >
@@ -126,12 +137,7 @@ export default function Home() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center">
-                  <p className="font-medium truncate">{user.name}</p>
-                  <span className="text-xs text-muted-foreground">
-                    12:30 PM
-                  </span>
-                </div>
+                <p className="font-medium truncate">{user.name}</p>
                 <p className="text-sm text-muted-foreground truncate">
                   {user.lastMessage}
                 </p>
@@ -143,72 +149,74 @@ export default function Home() {
 
       {/* Right Panel - Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="p-4 border-b flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={selectedUser.avatar} alt={selectedUser.name} />
-              <AvatarFallback>{selectedUser.name[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="font-semibold">{selectedUser.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {selectedUser.online ? "Online" : "Offline"}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <Button variant="ghost" size="icon">
-              <Phone className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Video className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.sender === "me" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[70%] ${
-                    message.sender === "me"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-accent"
-                  } rounded-lg p-3`}
-                >
-                  <p>{message.content}</p>
-                  <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
+        {selectedUser ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage
+                    src={selectedUser.avatar}
+                    alt={selectedUser.name}
+                  />
+                  <AvatarFallback>{selectedUser.name[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="font-semibold">{selectedUser.name}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.online ? "Online" : "Offline"}
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+            </div>
 
-        {/* Message Input */}
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-            />
-            <Button onClick={sendMessage}>
-              <Send className="h-4 w-4" />
-            </Button>
+            {/* Messages Area */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${
+                      message.sender === currentUser
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[70%] ${
+                        message.sender === currentUser
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-accent"
+                      } rounded-lg p-3`}
+                    >
+                      <p>{message.content}</p>
+                      <p className="text-xs mt-1 opacity-70">
+                        {message.timestamp}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="p-4 border-t flex gap-2">
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              />
+              <Button onClick={sendMessage}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-gray-500">Select a user to start chatting</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
