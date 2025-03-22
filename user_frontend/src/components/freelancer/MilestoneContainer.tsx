@@ -1,5 +1,6 @@
 "use client";
 import axios from "axios";
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 
 interface TimelineItemProps {
@@ -81,8 +82,7 @@ const HandleRaiseDispute: React.FC<{
           onSubmit={(e) => {
             e.preventDefault();
             onSubmit(formData);
-          }}
-        >
+          }}>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -105,14 +105,12 @@ const HandleRaiseDispute: React.FC<{
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            >
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90"
-            >
+              className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90">
               Submit
             </button>
           </div>
@@ -131,42 +129,71 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
   const getStatusColor = () => {
     switch (status) {
       case "completed":
-        return "bg-[rgba(52,178,51,1)]";
+        return "bg-[#34b233]";
       case "active":
-        return "bg-[rgba(121,37,255,1)]";
+        return "bg-[#7925ff]";
       case "pending":
-        return "bg-[rgba(242,236,255,1)]";
+        return "bg-[#f2ecff]";
     }
   };
 
-  const getLineColor = () => {
+  const getStatusLabel = () => {
     switch (status) {
       case "completed":
-        return "bg-[rgba(52,178,51,1)]";
-      default:
-        return "bg-[rgba(242,236,255,1)]";
+        return "Completed";
+      case "active":
+        return "In Review";
+      case "pending":
+        return "Pending";
+    }
+  };
+
+  const getStatusTextColor = () => {
+    switch (status) {
+      case "completed":
+        return "text-[#34b233]";
+      case "active":
+        return "text-[#7925ff]";
+      case "pending":
+        return "text-[#4f7296]";
     }
   };
 
   return (
-    <div className="flex min-h-[67px] w-full items-stretch gap-2 flex-wrap mt-2 max-md:max-w-full">
-      <div
-        className={`flex flex-col items-center w-10 ${isLast ? "pb-3" : ""}`}
-      >
-        {!isLast && <div className={`${getLineColor()} flex min-h-4 w-0.5`} />}
-        <div
-          className={`rounded ${getStatusColor()} flex min-h-2 w-2 h-2 mt-1`}
-        />
+    <div className="flex items-start gap-6 py-4 group relative hover:bg-[#f7f9fc] rounded-lg transition-colors duration-200">
+      <div className="relative">
+        {/* Timeline dot with label */}
+        <div className="flex flex-col items-center">
+          <span className={`text-xs font-medium mb-2 ${getStatusTextColor()}`}>
+            {getStatusLabel()}
+          </span>
+          <div
+            className={`w-4 h-4 rounded-full ${getStatusColor()} ring-4 ring-white shadow-sm relative z-10`}
+          />
+        </div>
+        {/* Connecting line */}
         {!isLast && (
-          <div className={`${getLineColor()} flex min-h-10 w-0.5 mt-1`} />
+          <div className="absolute left-2 top-10 bottom-0 w-0.5 bg-gradient-to-b from-current to-[#f2ecff] -z-10" />
         )}
       </div>
-      <div className="min-w-60 text-base flex-1 shrink basis-[0%] py-3 max-md:max-w-full">
-        <div className="w-full text-[rgba(13,20,28,1)] font-medium max-md:max-w-full">
+      <div className="flex-1 pt-1">
+        <h3 className="text-[#0c141c] font-medium text-base mb-1 group-hover:text-[#7925ff] transition-colors">
           {title}
-        </div>
-        <div className="w-full text-[rgba(79,115,150,1)] font-normal max-md:max-w-full">
-          {date}
+        </h3>
+        <div className="flex items-center gap-2">
+          <svg
+            className="w-4 h-4 text-[#4f7296]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          <span className="text-sm text-[#4f7296]">{date}</span>
         </div>
       </div>
     </div>
@@ -184,15 +211,20 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
         {title}
       </div>
       <div
-        className={`${textColor} text-[26px] font-bold leading-none mt-[9px]`}
-      >
+        className={`${textColor} text-[26px] font-bold leading-none mt-[9px]`}>
         {amount}
       </div>
     </div>
   );
 };
 
-const MilestoneContainer: React.FC = (projectId) => {
+interface MilestoneContainerProps {
+  projectId: string;
+}
+
+const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
+  projectId,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
@@ -206,7 +238,7 @@ const MilestoneContainer: React.FC = (projectId) => {
       try {
         setLoading(true);
         const response = await fetch(
-          `http://localhost:8000/project/${projectId.projectId}`
+          `http://localhost:8000/project/${projectId}`
         );
         console.log(response);
         if (!response.ok) {
@@ -345,8 +377,7 @@ const MilestoneContainer: React.FC = (projectId) => {
           onDragLeave={handleDragOut}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          onClick={() => document.getElementById("fileInput")?.click()}
-        >
+          onClick={() => document.getElementById("fileInput")?.click()}>
           <input
             type="file"
             id="fileInput"
@@ -360,8 +391,7 @@ const MilestoneContainer: React.FC = (projectId) => {
               className="w-8 h-8 text-gray-400"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+              viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -379,11 +409,14 @@ const MilestoneContainer: React.FC = (projectId) => {
           <div className="grid grid-cols-4 gap-4">
             {images.map((file, index) => (
               <div key={index} className="relative group">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`Preview ${index + 1}`}
-                  className="w-full h-24 object-cover rounded-lg"
-                />
+                <div className="relative w-full h-24">
+                  <Image
+                    src={URL.createObjectURL(file)}
+                    alt={`Preview ${index + 1}`}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                </div>
                 <button
                   onClick={() => {
                     const newImages = [...images];
@@ -391,14 +424,12 @@ const MilestoneContainer: React.FC = (projectId) => {
                     onImageUpload(newImages);
                   }}
                   className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 
-                    opacity-0 group-hover:opacity-100 transition-opacity"
-                >
+                    opacity-0 group-hover:opacity-100 transition-opacity">
                   <svg
                     className="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -459,8 +490,7 @@ const MilestoneContainer: React.FC = (projectId) => {
             onSubmit={(e) => {
               e.preventDefault();
               onSubmit(formData);
-            }}
-          >
+            }}>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -537,14 +567,12 @@ const MilestoneContainer: React.FC = (projectId) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90"
-              >
+                className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90">
                 Submit
               </button>
             </div>
@@ -648,28 +676,35 @@ const MilestoneContainer: React.FC = (projectId) => {
         />
       </div>
       {/* Timeline Section */}
-      <section className="w-full mt-8 max-md:max-w-full">
-        <h2 className="text-lg text-[rgba(13,20,28,1)] font-bold leading-none pt-4 pb-2 px-4 max-md:max-w-full">
-          Milestones Timeline
-        </h2>
-        <div className="w-full px-4 max-md:max-w-full">
-          {milestones.map((milestone, index) => (
-            <TimelineItem
-              key={milestone._id}
-              title={milestone.description}
-              date={getFormattedDate(milestone.createdAt)}
-              status={getMilestoneStatus(milestone.status)}
-              isLast={index === milestones.length - 1}
-            />
-          ))}
+      <section className="mt-12 bg-white rounded-xl border border-[#e5e8ea] overflow-hidden">
+        <div className="p-6 border-b border-[#e5e8ea]">
+          <h2 className="text-xl font-semibold text-[#0c141c]">
+            Milestones Timeline
+          </h2>
+          <p className="text-[#4f7296] mt-1">
+            Track your project&apos;s progress through completed milestones
+          </p>
+        </div>
+
+        <div className="p-6 bg-gradient-to-b from-white to-[#f7f9fc]">
+          <div className="relative pl-4">
+            {milestones.map((milestone, index) => (
+              <TimelineItem
+                key={milestone._id}
+                title={milestone.description}
+                date={getFormattedDate(milestone.createdAt)}
+                status={getMilestoneStatus(milestone.status)}
+                isLast={index === milestones.length - 1}
+              />
+            ))}
+          </div>
         </div>
       </section>
       {/* Milestone Items */}
       {milestones.map((milestone) => (
         <div
           key={milestone._id}
-          className="bg-white flex w-full flex-col items-stretch justify-center mt-8 py-2.5 rounded-2xl max-md:max-w-full"
-        >
+          className="bg-white flex w-full flex-col items-stretch justify-center mt-8 py-2.5 rounded-2xl max-md:max-w-full">
           <div className="flex min-h-[72px] w-full items-center gap-[40px_100px] justify-between flex-wrap px-4 py-3 max-md:max-w-full">
             <div className="self-stretch flex min-w-60 items-center gap-4 my-auto">
               <div className="bg-[rgba(191,255,190,1)] self-stretch flex min-h-12 items-center justify-center w-12 h-12 my-auto rounded-lg">
@@ -681,8 +716,7 @@ const MilestoneContainer: React.FC = (projectId) => {
                   stroke="currentColor"
                   strokeWidth="2"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                  strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -703,8 +737,7 @@ const MilestoneContainer: React.FC = (projectId) => {
             <div className="self-stretch flex items-stretch gap-[25px] my-auto">
               <button
                 onClick={() => setDisputeModalOpen(true)}
-                className="overflow-hidden cursor-pointer text-xs text-[#ff2525] font-normal underline leading-[21px] my-auto"
-              >
+                className="overflow-hidden cursor-pointer text-xs text-[#ff2525] font-normal underline leading-[21px] my-auto">
                 Raise Dispute
               </button>
               <button className="overflow-hidden cursor-pointer text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
@@ -714,8 +747,7 @@ const MilestoneContainer: React.FC = (projectId) => {
                 <div
                   className={`${getStatusColor(
                     milestone.status
-                  )} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}
-                >
+                  )} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}>
                   <div className="self-stretch w-16 overflow-hidden my-auto">
                     {getStatusLabel(milestone.status)}
                   </div>
@@ -735,8 +767,7 @@ const MilestoneContainer: React.FC = (projectId) => {
                 <button
                   key={milestone._id}
                   onClick={() => handleSubmit(milestone._id)}
-                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl"
-                >
+                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl">
                   <div className="self-stretch overflow-hidden my-auto">
                     Submit: {milestone.description}
                   </div>
