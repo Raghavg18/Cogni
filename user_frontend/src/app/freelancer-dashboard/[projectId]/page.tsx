@@ -1,20 +1,24 @@
-'use client';
-import React from "react";
-import MilestoneContainer from "@/components/freelancer/MilestoneContainer";
-import Header from "@/components/layout/Header";
-import { useParams } from "next/navigation";
+"use client";
 
-const Index: React.FC = () => {
-  const params = useParams()
-  const projectId = params.projectId
+import React from "react";
+import { useParams } from "next/navigation";
+import MilestoneContainer from "@/components/freelancer/MilestoneContainer";
+
+interface ProjectParams {
+  projectId: string;
+}
+
+const ProjectDetails: React.FC = () => {
+  const params = useParams() as unknown as ProjectParams;
 
   return (
-    <div className="bg-white">
-      <div className="bg-[rgba(247,250,252,1)] min-h-[800px] w-full overflow-hidden max-md:max-w-full">
-        <div className="w-full max-md:max-w-full">
-          <Header />
-          <main className="flex w-full justify-center flex-1 h-full px-40 py-5 max-md:max-w-full max-md:px-5">
-            <MilestoneContainer projectId={projectId}/>
+    <div className="min-h-screen bg-white">
+      <div className="min-h-[800px] w-full bg-[#f7f9fc] overflow-hidden">
+        <div className="w-full">
+          <main className="flex justify-center px-6 py-8 md:px-40 md:py-5">
+            <div className="w-full max-w-[960px]">
+              <MilestoneContainer projectId={params.projectId} />
+            </div>
           </main>
         </div>
       </div>
@@ -22,4 +26,4 @@ const Index: React.FC = () => {
   );
 };
 
-export default Index;
+export default ProjectDetails;
