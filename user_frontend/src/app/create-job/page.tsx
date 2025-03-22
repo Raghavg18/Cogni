@@ -8,25 +8,25 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 
 const CreateJob: React.FC = () => {
-  const router = useRouter()
+  const router = useRouter();
   // Project details state
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
-  
+
   // Milestones state
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  
+
   // Form visibility state
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
-  
+
   // New milestone form state
   const [newMilestone, setNewMilestone] = useState({
     title: "",
     description: "",
     date: "",
-    amount: ""
+    amount: "",
   });
-  
+
   // Error state
   const [error, setError] = useState("");
 
@@ -48,11 +48,13 @@ const CreateJob: React.FC = () => {
     const projectData = {
       name: projectTitle,
       description: projectDescription,
-      milestones: milestones
+      milestones: milestones,
     };
-    const response = await axios.post("http://localhost:8000/create-project",projectData)
-    router.push('/funding/'+response.data.projectId)
-    
+    const response = await axios.post(
+      "http://localhost:8000/create-project",
+      projectData,
+    );
+    router.push("/funding/" + response.data.projectId);
   };
 
   const handleAddMilestone = () => {
@@ -60,11 +62,13 @@ const CreateJob: React.FC = () => {
     setError("");
   };
 
-  const handleMilestoneInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleMilestoneInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setNewMilestone({
       ...newMilestone,
-      [name]: value
+      [name]: value,
     });
   };
 
@@ -74,25 +78,25 @@ const CreateJob: React.FC = () => {
       setError("Milestone title is required");
       return;
     }
-    
+
     if (!newMilestone.date.trim()) {
       setError("Milestone date is required");
       return;
     }
-    
+
     if (!newMilestone.amount.trim()) {
       setError("Milestone amount is required");
       return;
     }
-    
+
     // Format the date for display
     const dateObj = new Date(newMilestone.date);
-    const formattedDate = dateObj.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    const formattedDate = dateObj.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
-    
+
     // Create a new milestone
     const milestone: Milestone = {
       title: newMilestone.title,
@@ -100,29 +104,29 @@ const CreateJob: React.FC = () => {
       date: formattedDate,
       amount: newMilestone.amount,
       completed: false,
-      isLast: true
+      isLast: true,
     };
-    
+
     // Update the previous last milestone if it exists
-    const updatedMilestones = milestones.map(m => ({
+    const updatedMilestones = milestones.map((m) => ({
       ...m,
-      isLast: false
+      isLast: false,
     }));
-    
+
     // Add the new milestone
     setMilestones([...updatedMilestones, milestone]);
-    
+
     // Reset the form
     setNewMilestone({
       title: "",
       description: "",
       date: "",
-      amount: ""
+      amount: "",
     });
-    
+
     // Hide the form
     setShowMilestoneForm(false);
-    
+
     // Clear any errors
     setError("");
   };
@@ -130,50 +134,73 @@ const CreateJob: React.FC = () => {
   const handleRemoveMilestone = (index: number) => {
     const updatedMilestones = [...milestones];
     updatedMilestones.splice(index, 1);
-    
+
     // If we have milestones left, make sure the last one has isLast=true
     if (updatedMilestones.length > 0) {
       updatedMilestones[updatedMilestones.length - 1].isLast = true;
     }
-    
+
     setMilestones(updatedMilestones);
   };
 
   // Enhanced Timeline Component
-  const EnhancedMilestoneTimeline: React.FC<{ milestones: Milestone[] }> = ({ milestones }) => {
+  const EnhancedMilestoneTimeline: React.FC<{ milestones: Milestone[] }> = ({
+    milestones,
+  }) => {
     return (
       <div className="px-6 py-4">
         {milestones.map((milestone, index) => (
           <div key={index} className="relative ml-6 mb-6">
             {/* Vertical line */}
             {index < milestones.length - 1 && (
-              <div className="absolute left-3 top-8 h-full w-0.5 bg-[rgba(229,232,235,1)]" style={{ transform: 'translateX(-50%)' }}></div>
+              <div
+                className="absolute left-3 top-8 h-full w-0.5 bg-[rgba(229,232,235,1)]"
+                style={{ transform: "translateX(-50%)" }}
+              ></div>
             )}
-            
+
             {/* Timeline node */}
             <div className="absolute left-0 top-2 -ml-3 h-6 w-6 rounded-full bg-[rgba(79,115,150,1)] border-4 border-white flex items-center justify-center">
               {milestone.completed ? (
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10 3L4.5 8.5L2 6"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               ) : null}
             </div>
-            
+
             {/* Milestone content */}
             <div className="flex justify-between items-start">
               <div className="ml-6">
                 <div className="flex items-center">
-                  <h4 className="text-base font-semibold text-[rgba(13,20,28,1)]">{milestone.title}</h4>
-                  <button 
+                  <h4 className="text-base font-semibold text-[rgba(13,20,28,1)]">
+                    {milestone.title}
+                  </h4>
+                  <button
                     onClick={() => handleRemoveMilestone(index)}
                     className="ml-2 text-[rgba(79,115,150,1)] hover:text-red-500"
                   >
                     <XCircle size={16} />
                   </button>
                 </div>
-                <div className="text-sm text-[rgba(79,115,150,1)] mt-1">{milestone.date}</div>
+                <div className="text-sm text-[rgba(79,115,150,1)] mt-1">
+                  {milestone.date}
+                </div>
                 {milestone.description && (
-                  <div className="text-sm text-[rgba(79,115,150,1)] mt-1">{milestone.description}</div>
+                  <div className="text-sm text-[rgba(79,115,150,1)] mt-1">
+                    {milestone.description}
+                  </div>
                 )}
                 {milestone.amount && (
                   <div className="bg-[rgba(247,250,252,1)] text-[rgba(13,20,28,1)] text-sm font-medium px-3 py-1 rounded-full mt-2 inline-block">
@@ -181,7 +208,7 @@ const CreateJob: React.FC = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="mr-2">
                 {milestone.completed ? (
                   <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">
@@ -247,7 +274,10 @@ const CreateJob: React.FC = () => {
                 {/* Project Details Section */}
                 <div className="px-6 py-4 border-b border-[rgba(229,232,235,1)]">
                   <div className="mb-4">
-                    <label htmlFor="projectTitle" className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1">
+                    <label
+                      htmlFor="projectTitle"
+                      className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                    >
                       Project Title
                     </label>
                     <input
@@ -259,9 +289,12 @@ const CreateJob: React.FC = () => {
                       placeholder="Enter project title"
                     />
                   </div>
-                  
+
                   <div className="mb-2">
-                    <label htmlFor="projectDescription" className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1">
+                    <label
+                      htmlFor="projectDescription"
+                      className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                    >
                       Project Description
                     </label>
                     <textarea
@@ -278,7 +311,9 @@ const CreateJob: React.FC = () => {
                 {/* Milestones Section */}
                 <div className="px-6 py-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-[rgba(13,20,28,1)]">Milestones</h2>
+                    <h2 className="text-lg font-bold text-[rgba(13,20,28,1)]">
+                      Milestones
+                    </h2>
                     <button
                       onClick={handleAddMilestone}
                       className="flex items-center bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-4 py-2 rounded-md"
@@ -297,10 +332,15 @@ const CreateJob: React.FC = () => {
                   {/* Milestone Form Dropdown */}
                   {showMilestoneForm && (
                     <div className="bg-[rgba(247,250,252,1)] p-4 rounded-md mb-6 border border-[rgba(229,232,235,1)]">
-                      <h3 className="font-medium text-[rgba(13,20,28,1)] mb-3">New Milestone</h3>
-                      
+                      <h3 className="font-medium text-[rgba(13,20,28,1)] mb-3">
+                        New Milestone
+                      </h3>
+
                       <div className="mb-3">
-                        <label htmlFor="milestoneTitle" className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1">
+                        <label
+                          htmlFor="milestoneTitle"
+                          className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                        >
                           Title
                         </label>
                         <input
@@ -313,9 +353,12 @@ const CreateJob: React.FC = () => {
                           placeholder="Milestone title"
                         />
                       </div>
-                      
+
                       <div className="mb-3">
-                        <label htmlFor="milestoneDescription" className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1">
+                        <label
+                          htmlFor="milestoneDescription"
+                          className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                        >
                           Description
                         </label>
                         <textarea
@@ -328,10 +371,13 @@ const CreateJob: React.FC = () => {
                           placeholder="Milestone description"
                         />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                          <label htmlFor="milestoneDate" className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1">
+                          <label
+                            htmlFor="milestoneDate"
+                            className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                          >
                             Date
                           </label>
                           <input
@@ -343,9 +389,12 @@ const CreateJob: React.FC = () => {
                             onChange={handleMilestoneInputChange}
                           />
                         </div>
-                        
+
                         <div>
-                          <label htmlFor="milestoneAmount" className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1">
+                          <label
+                            htmlFor="milestoneAmount"
+                            className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                          >
                             Amount
                           </label>
                           <input
@@ -359,7 +408,7 @@ const CreateJob: React.FC = () => {
                           />
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => setShowMilestoneForm(false)}
@@ -384,7 +433,8 @@ const CreateJob: React.FC = () => {
                     </div>
                   ) : (
                     <div className="text-[rgba(79,115,150,1)] italic mb-6 bg-[rgba(247,250,252,1)] p-4 rounded-md border border-[rgba(229,232,235,1)] text-center">
-                      No milestones added yet. Click "Create Milestone" to add one.
+                      No milestones added yet. Click &quot;Create
+                      Milestone&quot; to add one.
                     </div>
                   )}
 
@@ -409,3 +459,4 @@ const CreateJob: React.FC = () => {
 };
 
 export default CreateJob;
+
