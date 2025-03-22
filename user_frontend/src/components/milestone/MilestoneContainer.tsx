@@ -1,5 +1,5 @@
 "use client";
-import React, { JSX, useState } from "react";
+import React, { JSX, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Clock,
@@ -18,6 +18,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import axios from "axios";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Initialize Stripe once
+const stripePromise = loadStripe("your_publishable_key"); // Replace with your actual publishable key
 
 // MilestoneContainer Component
 interface MilestoneContainerProps {
@@ -54,6 +58,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseSuccess, setReleaseSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [processingAction, setProcessingAction] = useState(false);
 
   // Function to determine status-based styling and icons
 
@@ -94,6 +99,8 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   const handleViewDetails = (milestone: Milestone): void => {
     setSelectedMilestone(milestone);
     setDetailsOpen(true);
+    setError(null);
+    setReleaseSuccess(false);
   };
 
   const handleRelease = async (milestoneId: string) => {
@@ -109,12 +116,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       );
 
       if (response.data.success) {
-        setReleaseSuccess(true);
-        // Close the modal after 2 seconds and refresh the page
-        setTimeout(() => {
-          setDetailsOpen(false);
-          window.location.reload();
-        }, 2000);
+        handleReleaseSuccess();
       } else {
         setError(response.data.message || "Failed to release payment");
       }
@@ -126,6 +128,82 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       console.error("Error releasing payment:", err);
     } finally {
       setIsReleasing(false);
+    }
+  };
+
+  // Handle 3D Secure authentication
+  const handleStripeAction = async (paymentData) => {
+    try {
+      setProcessingAction(true);
+      setError("Payment requires additional authentication. Please don't close this window.");
+      
+      const stripe = await stripePromise;
+      
+      // Confirm the PaymentIntent with the client secret
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        paymentData.payment_intent_client_secret
+      );
+      
+      if (error) {
+        // Handle error during authentication
+        setError(`Authentication failed: ${error.message}`);
+        return false;
+      }
+      
+      if (paymentIntent.status === 'requires_capture') {
+        // Now try to release payment again
+        retryPaymentRelease(selectedMilestone._id);
+        return true;
+      } else {
+        setError(`Payment is in ${paymentIntent.status} state. Cannot proceed.`);
+        return false;
+      }
+    } catch (err) {
+      console.error("Error during authentication:", err);
+      setError("Authentication process failed");
+      return false;
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  // Retry payment release after successful authentication
+  const retryPaymentRelease = async (milestoneId) => {
+    try {
+      setIsReleasing(true);
+      setError("Payment authenticated. Releasing payment...");
+      
+      const response = await axios.post("http://localhost:8000/release-payment", {
+        milestoneId: milestoneId
+      });
+      
+      if (response.data.success) {
+        handleReleaseSuccess();
+      } else {
+        setError(response.data.message || "Failed to release payment after authentication");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to release payment after authentication");
+    } finally {
+      setIsReleasing(false);
+    }
+  };
+
+  // Handle successful payment release
+  const handleReleaseSuccess = () => {
+    setReleaseSuccess(true);
+    setError(null);
+    // Close the modal after 2 seconds and refresh the page
+    setTimeout(() => {
+      setDetailsOpen(false);
+      window.location.reload();
+    }, 2000);
+  };
+
+  // Handle freelancer account setup if needed
+  const handleStripeAccountSetup = (accountLink) => {
+    if (accountLink) {
+      window.location.href = accountLink;
     }
   };
 
@@ -292,7 +370,6 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
                   </p>
                 </div>
               )}
-
               {/* Success message */}
               {releaseSuccess && (
                 <div className="bg-green-50 text-green-700 p-3 rounded border border-green-200 flex items-center">
@@ -311,7 +388,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+            <Button variant="outline" onClick={() => setDetailsOpen(false)} disabled={processingAction}>
               Close
             </Button>
 
@@ -319,7 +396,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
               <Button
                 onClick={() => handleRelease(selectedMilestone._id)}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isReleasing || releaseSuccess}
+                disabled={isReleasing || releaseSuccess || processingAction}
               >
                 {isReleasing ? "Processing..." : "Release Payment"}
               </Button>
