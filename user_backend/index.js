@@ -138,11 +138,12 @@ app.post("/connect-stripe", async (req, res) => {
 });
 
 app.post("/create-project", async (req, res) => {
-  const { clientName, freelancerName, milestones } = req.body;
+  const { name, description, clientName, milestones } = req.body;
 
   const project = await Project.create({
+    name,
+    description,
     clientId: clientName,
-    freelancerId: freelancerName,
     totalAmount: 0,
   });
 
@@ -263,10 +264,8 @@ app.get("/project/:projectId", async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // Add title property based on IDs
-    project.title = "Website Redesign"; // Default title, you could query from a different collection
-
-    res.status(200).json(project);
+    const milestones = await Milestone.find({projectId: project._id})
+    res.status(200).json({project,milestones});
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ message: "Server error" });
@@ -331,6 +330,98 @@ app.get("/projects", verify, async (req, res) => {
   } catch (error) {
     console.error("Error fetching projects:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/freelancers",async (req,res)=>{
+  const freelancers = await User.find({role : "freelancer"})
+  res.status(200).json(freelancers)
+})
+
+// Assign a freelancer to a project
+app.put("/project/:projectId/assign-freelancer", async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { freelancerId } = req.body;
+
+    if (!projectId || !freelancerId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Project ID and freelancer ID are required" 
+      });
+    }
+
+    // Find the project
+    const project = await Project.findById(projectId);
+    
+    if (!project) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Project not found" 
+      });
+    }
+
+    // Verify the freelancer exists and is actually a freelancer
+    const freelancer = await User.findOne({ 
+      _id: freelancerId,
+      role: "freelancer" 
+    });
+
+    if (!freelancer) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Freelancer not found or user is not a freelancer" 
+      });
+    }
+
+    // Update the project with the freelancer ID
+    project.freelancerId = freelancer.username;
+    await project.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Freelancer assigned successfully",
+      project: {
+        id: project._id,
+        name: project.name,
+        freelancerId: project.freelancerId
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error assigning freelancer:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
+  }
+});
+
+// Add a route to get details of a specific milestone
+app.get("/milestone/:milestoneId", async (req, res) => {
+  try {
+    const { milestoneId } = req.params;
+    const milestone = await Milestone.findById(milestoneId);
+
+    if (!milestone) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Milestone not found" 
+      });
+    }
+
+    res.json({
+      success: true,
+      milestone
+    });
+  } catch (error) {
+    console.error("Error fetching milestone:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
   }
 });
 

@@ -8,6 +8,8 @@ import { Schema, model } from "mongoose";
 });
 
  const ProjectSchema = new Schema({
+  name : String,
+  description : String,
   clientId: String,
   freelancerId: String,
   totalAmount: Number,
@@ -18,7 +20,7 @@ import { Schema, model } from "mongoose";
   projectId: Schema.Types.ObjectId,
   description: String,
   amount: Number,
-  status: { type: String, enum: ["pending", "approved", "paid"], default: "pending" },
+  status: { type: String, enum: ["pending", "submitted", "paid"], default: "pending" },
   paymentIntentId: String,
 });
 
