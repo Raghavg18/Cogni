@@ -647,6 +647,68 @@ app.get("/client-projects/:clientId", async (req, res) => {
   }
 });
 
+// Get all projects for a specific freelancer
+app.get("/freelancer-projects/:freelancerId", async (req, res) => {
+  try {
+    const { freelancerId } = req.params;
+    
+    if (!freelancerId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Freelancer ID is required" 
+      });
+    }
+
+    // Find all projects assigned to this freelancer
+    const projects = await Project.find({ freelancerId });
+    
+    // For each project, get its milestones
+    const projectsWithDetails = await Promise.all(projects.map(async (project) => {
+      const milestones = await Milestone.find({ projectId: project._id });
+      
+      // Calculate completion percentage based on milestones
+      const totalMilestones = milestones.length;
+      const completedMilestones = milestones.filter(
+        m => m.status === "paid" || m.status === "submitted"
+      ).length;
+      
+      const progress = totalMilestones > 0 
+        ? Math.round((completedMilestones / totalMilestones) * 100) 
+        : 0;
+      
+      // Calculate total budget and received amount
+      const totalBudget = milestones.reduce((sum, m) => sum + m.amount, 0);
+      const receivedAmount = milestones
+        .filter(m => m.status === "paid")
+        .reduce((sum, m) => sum + m.amount, 0);
+      
+      return {
+        id: project._id.toString(),
+        title: project.name,
+        progress,
+        totalBudget,
+        receivedAmount,
+        milestones: {
+          total: totalMilestones,
+          completed: completedMilestones
+        }
+      };
+    }));
+    
+    res.status(200).json({
+      success: true,
+      projects: projectsWithDetails
+    });
+  } catch (error) {
+    console.error("Error fetching freelancer projects:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error", 
+      error: error.message 
+    });
+  }
+});
+
 // Logout route
 app.post("/logout", (req, res) => {
   res.clearCookie("uuid");
