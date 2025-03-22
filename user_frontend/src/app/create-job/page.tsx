@@ -20,7 +20,14 @@ const CreateJob: React.FC = () => {
   const [projectDescription, setProjectDescription] = useState("");
 
   // Milestones state
-  const [milestones, setMilestones] = useState([]);
+  const [milestones, setMilestones] = useState<Array<{
+    title: string;
+    description: string;
+    date: string;
+    amount: string;
+    completed: boolean;
+    isLast: boolean;
+  }>>([]);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -270,7 +277,7 @@ const CreateJob: React.FC = () => {
                 </button>
                 <button
                   onClick={handleAddMilestone}
-                  className="flex items-center justify-center bg-[#4f7296] hover:bg-[#3c5a78] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+                  className="flex items-center justify-center bg-[#7925FF] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
                 >
                   <span className="mr-2">+</span> Add Milestone
                 </button>
@@ -377,7 +384,7 @@ const CreateJob: React.FC = () => {
                     </button>
                     <button
                       onClick={handleCreateMilestone}
-                      className="px-4 py-2.5 rounded-lg bg-[#4f7296] hover:bg-[#3c5a78] text-white transition-colors text-sm font-medium"
+                      className="px-4 py-2.5 rounded-lg bg-[#7925FF] text-white transition-colors text-sm font-medium"
                     >
                       Save Milestone
                     </button>
@@ -444,7 +451,7 @@ const CreateJob: React.FC = () => {
               <button
                 onClick={handleCreateProject}
                 disabled={milestones.length === 0}
-                className={`px-8 py-3 rounded-lg font-medium text-base transition-colors
+                className={`px-8 py-3 rounded-lg font-medium text-base transition-colors 
                   ${milestones.length === 0 
                   ? 'bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed' 
                   : 'bg-[#4f7296] hover:bg-[#3c5a78] text-white'}`}
