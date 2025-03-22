@@ -7,6 +7,9 @@ import cors from "cors";
 import { verify } from "./middlewares/verify.middleware.js";
 import { User, Project, Milestone } from "./models/user.model.js";
 import Stripe from "stripe";
+import {v2 as cloudinary} from "cloudinary"
+import {CloudinaryStorage} from "multer-storage-cloudinary";
+import multer from "multer";
 
 const app = express();
 const PORT = 8000;
@@ -32,6 +35,30 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'milestones',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'gif'],
+    transformation: [{ width: 1000, crop: "limit" }] // Optional: resize large images
+  }
+});
+
+// Initialize multer with Cloudinary storage
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
 
 // Signup Route
 app.post("/signup", async (req, res) => {
@@ -232,12 +259,61 @@ app.post("/fund-escrow", async (req, res) => {
   res.json({ success: true, paymentIntentId: paymentIntent.id });
 });
 
-app.post("/submit-milestone", async (req, res) => {
-  const { milestoneId } = req.body;
-
-  await Milestone.findByIdAndUpdate(milestoneId, { status: "submitted" });
-
-  res.json({ success: true, message: "Milestone submitted" });
+app.post("/submit-milestone", upload.array('images', 10), async (req, res) => {
+  try {
+    console.log('Request body:', req.body);
+    console.log('Files received:', req.files?.length || 0);
+    
+    const { milestoneId, repositoryUrl, hostingUrl, externalFiles, notes } = req.body;
+    
+    if (!milestoneId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing milestone ID" 
+      });
+    }
+    
+    // Extract Cloudinary URLs from uploaded files
+    const imageUrls = req.files 
+      ? req.files.map(file => file.path) 
+      : [];
+    
+    console.log('Image URLs:', imageUrls);
+    
+    // Update the milestone in the database
+    const updatedMilestone = await Milestone.findByIdAndUpdate(
+      milestoneId, 
+      {
+        status: "submitted",
+        repositoryUrl,
+        hostingUrl,
+        externalFiles,
+        notes,
+        images: imageUrls
+      },
+      { new: true } // Return the updated document
+    );
+    
+    if (!updatedMilestone) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Milestone not found" 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: "Milestone submitted successfully", 
+      milestone: updatedMilestone 
+    });
+  } catch (error) {
+    console.error("Error submitting milestone:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error submitting milestone", 
+      error: error.message 
+    });
+  }
 });
 
 app.post("/release-payment", async (req, res) => {

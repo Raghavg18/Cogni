@@ -16,12 +16,18 @@ import { Schema, model } from "mongoose";
   status: { type: String, enum: ["funded", "completed"], default: "funded" },
 });
 
- const MilestoneSchema = new Schema({
+// Define Milestone Schema
+const MilestoneSchema = new Schema({
   projectId: Schema.Types.ObjectId,
   description: String,
   amount: Number,
   status: { type: String, enum: ["pending", "submitted", "paid"], default: "pending" },
   paymentIntentId: String,
+  repositoryUrl: String,
+  hostingUrl: String,
+  externalFiles: String,
+  notes: String,
+  images: [{ type: String }] // Array of Cloudinary URLs
 });
 
 export const User = model("User", UserSchema);

@@ -1,5 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { MilestoneSubmitData } from "./MilestoneSubmitModal";
 
 interface TimelineItemProps {
   title: string;
@@ -21,6 +23,30 @@ interface MilestoneSubmissionData {
   notes: string;
   budget: number;
   images: File[];
+  milestoneId: string;
+}
+
+interface Milestone {
+  _id: string;
+  description: string;
+  amount: number;
+  status: "pending" | "submitted" | "paid";
+  createdAt: string;
+  updatedAt: string;
+  projectId: string;
+  paymentIntentId?: string;
+  transferId?: string;
+}
+
+interface Project {
+  _id: string;
+  name: string;
+  description: string;
+  clientId: string;
+  freelancerId?: string;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const TimelineItem: React.FC<TimelineItemProps> = ({
@@ -93,7 +119,96 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
   );
 };
 
-const MilestoneContainer: React.FC = () => {
+const MilestoneContainer: React.FC = (projectId) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
+  const [project, setProject] = useState<Project | null>(null);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:8000/project/${projectId.projectId}`);
+        console.log(response)
+        if (!response.ok) {
+          throw new Error("Failed to fetch project data");
+        }
+        const data = await response.json();
+        setProject(data.project);
+        setMilestones(data.milestones);
+      } catch (err) {
+        setError("Error loading project data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjectData();
+  }, [projectId]);
+
+  // Calculate budget numbers
+  const totalBudget = milestones.reduce((sum, milestone) => sum + milestone.amount, 0);
+  const receivedAmount = milestones
+    .filter((milestone) => milestone.status === "paid")
+    .reduce((sum, milestone) => sum + milestone.amount, 0);
+  const pendingAmount = totalBudget - receivedAmount;
+
+  // Calculate project progress
+  const completedMilestones = milestones.filter(
+    (milestone) => milestone.status === "paid"
+  ).length;
+  const progress = milestones.length > 0
+    ? Math.round((completedMilestones / milestones.length) * 100)
+    : 0;
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "Received";
+      case "submitted":
+        return "Submitted";
+      default:
+        return "Pending";
+    }
+  };
+
+  const getFormattedDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  const getMilestoneStatus = (status: string): "completed" | "active" | "pending" => {
+    switch (status) {
+      case "paid":
+        return "completed";
+      case "submitted":
+        return "active";
+      default:
+        return "pending";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "bg-[rgba(242,236,255,1)] text-[rgba(13,20,28,1)]";
+      case "submitted":
+        return "bg-[rgba(255,236,161,1)] text-[rgba(13,20,28,1)]";
+      default:
+        return "bg-[rgba(121,37,255,1)] text-white";
+    }
+  };
+
+  const handleSubmit = (milestoneId: string) => {
+    setSelectedMilestoneId(milestoneId);
+    setIsModalOpen(true);
+  };
+
   const ImageUploadZone: React.FC<{
     onImageUpload: (files: File[]) => void;
     images: File[];
@@ -228,7 +343,8 @@ const MilestoneContainer: React.FC = () => {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: MilestoneSubmissionData) => void;
-  }> = ({ isOpen, onClose, onSubmit }) => {
+    milestoneId: string;
+  }> = ({ isOpen, onClose, onSubmit, milestoneId }) => {
     const [formData, setFormData] = useState<MilestoneSubmissionData>({
       repositoryUrl: "",
       hostingUrl: "",
@@ -236,7 +352,19 @@ const MilestoneContainer: React.FC = () => {
       notes: "",
       budget: 0,
       images: [],
+      milestoneId: milestoneId,
     });
+
+    useEffect(() => {
+      // Set the milestone ID when it changes
+      setFormData(prev => ({ ...prev, milestoneId }));
+      
+      // If the milestone exists, set the budget from the milestone
+      const milestone = milestones.find(m => m._id === milestoneId);
+      if (milestone) {
+        setFormData(prev => ({ ...prev, budget: milestone.amount }));
+      }
+    }, [milestoneId]);
 
     if (!isOpen) return null;
 
@@ -245,36 +373,6 @@ const MilestoneContainer: React.FC = () => {
         ...prev,
         images: [...prev.images, ...files],
       }));
-    };
-
-    const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
-      try {
-        const formData = new FormData();
-
-        // Append regular data
-        formData.append("repositoryUrl", data.repositoryUrl);
-        formData.append("hostingUrl", data.hostingUrl);
-        formData.append("externalFiles", data.externalFiles);
-        formData.append("notes", data.notes);
-        formData.append("budget", data.budget.toString());
-
-        data.images.forEach((image, index) => {
-          formData.append(`image${index}`, image);
-        });
-
-        const response = await fetch("/api/milestones/submit", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to submit milestone");
-        }
-
-        setIsModalOpen(false);
-      } catch (error) {
-        console.error("Error submitting milestone:", error);
-      }
     };
 
     return (
@@ -350,21 +448,6 @@ const MilestoneContainer: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Budget</label>
-                <input
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      budget: Number(e.target.value),
-                    }))
-                  }
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium mb-1">
                   Upload Images
                 </label>
@@ -395,56 +478,62 @@ const MilestoneContainer: React.FC = () => {
     );
   };
 
-  // Modify the MilestoneContainer component by adding these lines after the existing state declarations
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Replace the existing handleSubmit function with this:
-  const handleSubmit = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
-    try {
-      const response = await fetch("/api/milestones/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+  // Fixed handleMilestoneSubmit function
+const handleMilestoneSubmit = async (data: MilestoneSubmitData, milestoneId: string) => {
+  try {
+    // Create a FormData object to handle file uploads
+    const formData = new FormData();
+    
+    // Add the milestone ID
+    formData.append('milestoneId', milestoneId);
+    
+    // Add other fields (matching the backend field names)
+    formData.append('repositoryUrl', data.repositoryUrl);
+    formData.append('hostingUrl', data.hostedUrl); // Note: backend uses hostingUrl, frontend uses hostedUrl
+    formData.append('externalFiles', data.externalFiles);
+    formData.append('notes', data.note); // Note: backend uses notes, frontend uses note
+    
+    // Add each file individually
+    if (data.files && data.files.length > 0) {
+      data.files.forEach((file, index) => {
+        formData.append('images', file);
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit milestone");
-      }
-
-      setIsModalOpen(false);
-      // Add success notification here if needed
-    } catch (error) {
-      console.error("Error submitting milestone:", error);
-      // Add error notification here if needed
     }
-  };
+    
+    // Log the FormData for debugging (this won't show the actual content)
+    console.log("Sending FormData:", formData);
+    
+    // Send with the correct content type (FormData sets it automatically)
+    const response = await axios.post(
+      "http://localhost:8000/submit-milestone", 
+      formData, 
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    
+    console.log(response);
+    
+    if (!response) {
+      throw new Error("Failed to submit milestone");
+    }
 
-  const timelineItems = [
-    { title: "Job started", date: "Jun 1, 2023", status: "completed" as const },
-    { title: "Designing", date: "Jun 15, 2023", status: "completed" as const },
-    {
-      title: "Code Review: 1",
-      date: "July 15, 2023",
-      status: "active" as const,
-    },
-    {
-      title: "Code Review: 2",
-      date: "July 30, 2023",
-      status: "active" as const,
-    },
-    {
-      title: "Testing",
-      date: "August 10, 2023",
-      status: "active" as const,
-      isLast: true,
-    },
-  ];
+    // Update the local state to reflect changes
+    setMilestones(prev => 
+      prev.map(milestone => 
+        milestone._id === milestoneId 
+          ? { ...milestone, status: "submitted" } 
+          : milestone
+      )
+    );
+
+    setIsModalOpen(false);
+  } catch (error) {
+    console.error("Error submitting milestone:", error);
+  }
+};
 
   return (
     <div className="min-w-60 w-full max-w-[960px] overflow-hidden flex-1 shrink basis-[0%] max-md:max-w-full">
@@ -469,17 +558,17 @@ const MilestoneContainer: React.FC = () => {
       {/* Title and Progress */}
       <div className="w-full max-md:max-w-full">
         <div className="flex gap-[12px_0px] text-[32px] text-[rgba(13,20,28,1)] font-bold leading-none justify-between flex-wrap p-4">
-          <h1 className="min-w-72 w-72">Website Redesign</h1>
+          <h1 className="min-w-72 w-72">{project.name}</h1>
         </div>
         <div className="w-full p-4 max-md:max-w-full">
           <div className="flex w-full gap-[40px_100px] text-[rgba(13,20,28,1)] whitespace-nowrap justify-between flex-wrap max-md:max-w-full">
             <div className="text-base font-medium w-[70px]">Progress</div>
-            <div className="min-h-6 text-sm font-normal w-8">40%</div>
+            <div className="min-h-6 text-sm font-normal w-8">{progress}%</div>
           </div>
           <div className="rounded bg-[rgba(242,236,255,1)] flex w-full flex-col mt-3 max-md:max-w-full">
             <div
               className="rounded bg-[rgba(121,37,255,1)] flex min-h-2"
-              style={{ width: `40%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -487,15 +576,18 @@ const MilestoneContainer: React.FC = () => {
 
       {/* Budget Cards */}
       <div className="flex w-full items-stretch gap-[37px] flex-wrap mt-8 rounded-2xl max-md:max-w-full">
-        <BudgetCard title="Total Budget" amount="$5,000" />
+        <BudgetCard 
+          title="Total Budget" 
+          amount={`$${totalBudget.toLocaleString()}`} 
+        />
         <BudgetCard
-          title="Recieved"
-          amount="$2,000"
+          title="Received"
+          amount={`$${receivedAmount.toLocaleString()}`}
           textColor="text-[rgba(52,178,51,1)]"
         />
         <BudgetCard
           title="Pending"
-          amount="$3,000"
+          amount={`$${pendingAmount.toLocaleString()}`}
           textColor="text-[rgba(105,105,105,1)]"
         />
       </div>
@@ -506,83 +598,95 @@ const MilestoneContainer: React.FC = () => {
           Milestones Timeline
         </h2>
         <div className="w-full px-4 max-md:max-w-full">
-          <div className="flex min-h-[67px] w-full items-stretch gap-2 flex-wrap max-md:max-w-full">
-            <div className="flex flex-col items-center w-10 pt-5">
-              <div className="rounded bg-[rgba(52,178,51,1)] flex min-h-2 w-2 h-2" />
-              <div className="bg-[rgba(52,178,51,1)] flex min-h-10 w-0.5 mt-1" />
-            </div>
-            <div className="min-w-60 text-base flex-1 shrink basis-[0%] py-3 max-md:max-w-full">
-              <div className="w-full text-[rgba(13,20,28,1)] font-medium max-md:max-w-full">
-                Job started
-              </div>
-              <div className="w-full text-[rgba(79,115,150,1)] font-normal max-md:max-w-full">
-                Jun 1, 2023
-              </div>
-            </div>
-          </div>
-
-          {timelineItems.slice(1).map((item, index) => (
+          {milestones.map((milestone, index) => (
             <TimelineItem
-              key={index}
-              title={item.title}
-              date={item.date}
-              status={item.status}
-              isLast={item.isLast}
+              key={milestone._id}
+              title={milestone.description}
+              date={getFormattedDate(milestone.createdAt)}
+              status={getMilestoneStatus(milestone.status)}
+              isLast={index === milestones.length - 1}
             />
           ))}
         </div>
       </section>
 
-      {/* Milestone Item */}
-      <div className="bg-white flex w-full flex-col items-stretch justify-center mt-8 py-2.5 rounded-2xl max-md:max-w-full">
-        <div className="flex min-h-[72px] w-full items-center gap-[40px_100px] justify-between flex-wrap px-4 py-3 max-md:max-w-full">
-          <div className="self-stretch flex min-w-60 items-center gap-4 my-auto">
-            <div className="bg-[rgba(191,255,190,1)] self-stretch flex min-h-12 items-center justify-center w-12 h-12 my-auto rounded-lg">
-              <img
-                src="https://cdn.builder.io/api/v1/image/assets/4a4cf1ecf9034f01a73614fde549ea42/6f1585f5997db10128b849c0afc62280322437c9?placeholderIfAbsent=true"
-                alt="Milestone 1: Design"
-                className="aspect-[1] object-contain w-6 self-stretch my-auto"
-              />
-            </div>
-            <div className="self-stretch flex min-w-60 flex-col items-stretch justify-center w-[314px] my-auto">
-              <div className="max-w-full w-[314px] overflow-hidden text-base text-[rgba(13,20,28,1)] font-medium">
-                Milestone 1: Design
+      {/* Milestone Items */}
+      {milestones.map((milestone) => (
+        <div 
+          key={milestone._id}
+          className="bg-white flex w-full flex-col items-stretch justify-center mt-8 py-2.5 rounded-2xl max-md:max-w-full"
+        >
+          <div className="flex min-h-[72px] w-full items-center gap-[40px_100px] justify-between flex-wrap px-4 py-3 max-md:max-w-full">
+            <div className="self-stretch flex min-w-60 items-center gap-4 my-auto">
+              <div className="bg-[rgba(191,255,190,1)] self-stretch flex min-h-12 items-center justify-center w-12 h-12 my-auto rounded-lg">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
               </div>
-              <div className="w-[253px] max-w-full overflow-hidden text-sm text-[rgba(79,115,150,1)] font-normal">
-                Payment was Settled on Jun 18, 2023
+              <div className="self-stretch flex min-w-60 flex-col items-stretch justify-center w-[314px] my-auto">
+                <div className="max-w-full w-[314px] overflow-hidden text-base text-[rgba(13,20,28,1)] font-medium">
+                  {milestone.description}
+                </div>
+                <div className="w-[253px] max-w-full overflow-hidden text-sm text-[rgba(79,115,150,1)] font-normal">
+                  ${milestone.amount.toLocaleString()} - {getFormattedDate(milestone.updatedAt)}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="self-stretch flex items-stretch gap-[25px] w-[194px] my-auto">
-            <button className="overflow-hidden text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
-              View Details
-            </button>
-            <div className="text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap text-center">
-              <div className="bg-[rgba(242,236,255,1)] flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]">
-                <div className="self-stretch w-16 overflow-hidden my-auto">
-                  Received
+            <div className="self-stretch flex items-stretch gap-[25px] w-[194px] my-auto">
+              <button className="overflow-hidden text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
+                View Details
+              </button>
+              <div className="text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap text-center">
+                <div className={`${getStatusColor(milestone.status)} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}>
+                  <div className="self-stretch w-16 overflow-hidden my-auto">
+                    {getStatusLabel(milestone.status)}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      ))}
 
-      {/* Submit Button */}
-      <div className="flex w-full text-base text-[rgba(13,20,28,1)] font-bold text-center mt-8 px-4 py-3 max-md:max-w-full">
-        <button
-          onClick={handleSubmit}
-          className="bg-[rgba(232,237,242,1)] flex min-w-[84px] min-h-12 w-[179px] max-w-[480px] items-center overflow-hidden justify-center px-5 rounded-xl"
-        >
-          <div className="self-stretch w-[139px] overflow-hidden my-auto">
-            Submit Milestone
+      {/* Submit Button - Only show for pending milestones */}
+      {milestones.some(m => m.status === "pending") && (
+        <div className="flex w-full text-base text-[rgba(13,20,28,1)] font-bold text-center mt-8 px-4 py-3 max-md:max-w-full">
+          <div className="flex flex-wrap gap-4">
+            {milestones
+              .filter(m => m.status === "pending")
+              .map(milestone => (
+                <button
+                  key={milestone._id}
+                  onClick={() => handleSubmit(milestone._id)}
+                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl"
+                >
+                  <div className="self-stretch overflow-hidden my-auto">
+                    Submit: {milestone.description}
+                  </div>
+                </button>
+              ))}
           </div>
-        </button>
-      </div>
+        </div>
+      )}
+      
       <SubmitMilestoneModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={handleMilestoneSubmit}
+        onSubmit={(data) => handleMilestoneSubmit(data, selectedMilestone?._id || '')}
+        milestoneId={selectedMilestoneId}
       />
     </div>
   );
