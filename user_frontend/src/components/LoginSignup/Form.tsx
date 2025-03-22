@@ -43,7 +43,7 @@ const Form = ({ signup, onSubmit, redirectTo }: props) => {
             <label htmlFor="pass">Password</label>
             {!signup && (
               <p className="underline text-xs text-[#9C9AA5]">
-              Forgot Password?
+                Forgot Password?
               </p>
             )}
           </div>
@@ -81,8 +81,7 @@ const Form = ({ signup, onSubmit, redirectTo }: props) => {
         </div>
         <button
           type="submit"
-          className="w-full rounded-lg bg-[#7925FF] font-bold text-white py-3.5"
-        >
+          className="w-full rounded-lg bg-[#7925FF] font-bold text-white py-3.5">
           {signup ? "Create Account" : "Login"}
         </button>
       </form>
@@ -102,7 +101,7 @@ const Form = ({ signup, onSubmit, redirectTo }: props) => {
       {signup && (
         <p className="text-[10px] text-[#9C9AA5] text-center w-[358px]">
           By signing up to create an account I accept <br />
-          Company's{" "}
+          Company&apos;s
           <span className="text-black">Terms of use & Privacy Policy.</span>
         </p>
       )}

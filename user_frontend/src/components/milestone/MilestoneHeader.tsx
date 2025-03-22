@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 const MilestoneHeader: React.FC = () => {
@@ -21,26 +22,33 @@ const MilestoneHeader: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <div className="bg-[rgba(232,237,242,1)] flex min-h-10 items-center gap-2 overflow-hidden justify-center w-10 h-10 max-w-[480px] px-2.5 rounded-xl">
-            <div className="self-stretch w-full flex-1 shrink basis-[0%] my-auto">
-              <img
+            <div className="self-stretch w-5 flex-1 shrink basis-[0%] my-auto">
+              <Image
                 src="https://cdn.builder.io/api/v1/image/assets/4a4cf1ecf9034f01a73614fde549ea42/e8a5a998ba82a711cc28c498a68284d4fabd2fa8?placeholderIfAbsent=true"
-                className="aspect-[1] object-contain w-5 flex-1"
+                fill
+                alt="image"
+                className="aspect-[1] object-contain flex-1"
               />
             </div>
           </div>
           <div className="bg-[rgba(232,237,242,1)] flex min-h-10 items-center gap-2 overflow-hidden justify-center w-10 h-10 max-w-[480px] px-2.5 rounded-xl">
-            <div className="self-stretch w-full flex-1 shrink basis-[0%] my-auto">
-              <img
+            <div className="self-stretch w-5 flex-1 shrink basis-[0%] my-auto">
+              <Image
                 src="https://cdn.builder.io/api/v1/image/assets/4a4cf1ecf9034f01a73614fde549ea42/7499fa7b2fa2e71109c65d50fa28838fbebf80ee?placeholderIfAbsent=true"
-                className="aspect-[1] object-contain w-5 flex-1"
+                className="aspect-[1] object-contain flex-1"
+                alt="images"
               />
             </div>
           </div>
         </div>
-        <img
-          src="https://cdn.builder.io/api/v1/image/assets/4a4cf1ecf9034f01a73614fde549ea42/62b637a0e998ef23af08ab02b840e7e2bab13a36?placeholderIfAbsent=true"
-          className="aspect-[1] object-contain w-10 shrink-0 rounded-[20px]"
-        />
+        <div className="w-10 relative">
+          <Image
+            src="https://cdn.builder.io/api/v1/image/assets/4a4cf1ecf9034f01a73614fde549ea42/62b637a0e998ef23af08ab02b840e7e2bab13a36?placeholderIfAbsent=true"
+            className="aspect-[1] object-contain shrink-0 rounded-[20px]"
+            fill
+            alt="image"
+          />
+        </div>
       </div>
     </div>
   );

@@ -67,10 +67,6 @@ const Index: React.FC = () => {
 
   return (
     <div className="max-w-[960px] mx-auto">
-      <link
-        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;900&display=swap"
-        rel="stylesheet"
-      />
       <div className="flex min-h-screen max-md:flex-col">
         <main className="flex-1  p-4 max-md:p-3">
           <header>

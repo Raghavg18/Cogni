@@ -1,8 +1,9 @@
 "use client";
 import axios from "axios";
-import Image from "next/image";
 import React, { useState, useEffect } from "react";
-import MilestoneSubmitModal, { MilestoneSubmitData } from "./MilestoneSubmitModal";
+import MilestoneSubmitModal, {
+  MilestoneSubmitData,
+} from "./MilestoneSubmitModal";
 
 interface TimelineItemProps {
   title: string;
@@ -15,16 +16,6 @@ interface BudgetCardProps {
   title: string;
   amount: string;
   textColor?: string;
-}
-
-interface MilestoneSubmissionData {
-  repositoryUrl: string;
-  hostingUrl: string;
-  externalFiles: string;
-  notes: string;
-  budget: number;
-  images: File[];
-  milestoneId: string;
 }
 
 interface Milestone {
@@ -50,10 +41,6 @@ interface Project {
   updatedAt: string;
 }
 
-interface DisputeData {
-  disputeTitle: string;
-}
-
 const getFormattedDate = (dateString: string) => {
   const date = new Date(dateString);
   const options: Intl.DateTimeFormatOptions = {
@@ -62,63 +49,6 @@ const getFormattedDate = (dateString: string) => {
     year: "numeric",
   };
   return date.toLocaleDateString("en-US", options);
-};
-
-const HandleRaiseDispute: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: DisputeData) => void;
-}> = ({ isOpen, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState<DisputeData>({
-    disputeTitle: "",
-  });
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-[#00000060] bg-opacity-10 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-        <h2 className="text-xl font-bold mb-4">Submit Milestone</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit(formData);
-          }}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Write about your dispute
-              </label>
-              <textarea
-                value={formData.disputeTitle}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    disputeTitle: e.target.value,
-                  }))
-                }
-                className="w-full border rounded-lg p-2"
-                required
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-4 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90">
-              Submit
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 };
 
 const TimelineItem: React.FC<TimelineItemProps> = ({
@@ -227,18 +157,15 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   projectId,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
-  const [selectedMilestoneAmount,setSelectedMilestoneAmount] = useState<number>()
+  const [selectedMilestoneAmount, setSelectedMilestoneAmount] =
+    useState<number>();
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProjectData = async () => {
       try {
-        setLoading(true);
         const response = await fetch(
           `http://localhost:8000/project/${projectId}`
         );
@@ -250,10 +177,8 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
         setProject(data.project);
         setMilestones(data.milestones);
       } catch (err) {
-        setError("Error loading project data");
         console.error(err);
       } finally {
-        setLoading(false);
       }
     };
 
@@ -314,331 +239,70 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
     }
   };
 
-  const handleSubmit = (milestoneId: string) => {
-    setSelectedMilestoneId(milestoneId);
-    setIsModalOpen(true);
-  };
-
-  const ImageUploadZone: React.FC<{
-    onImageUpload: (files: File[]) => void;
-    images: File[];
-  }> = ({ onImageUpload, images }) => {
-    const [isDragging, setIsDragging] = useState(false);
-
-    const handleDrag = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    const handleDragIn = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(true);
-    };
-
-    const handleDragOut = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-
-      const files = Array.from(e.dataTransfer.files).filter((file) =>
-        file.type.startsWith("image/")
-      );
-
-      if (files.length > 0) {
-        onImageUpload(files);
-      }
-    };
-
-    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files?.length) {
-        const files = Array.from(e.target.files).filter((file) =>
-          file.type.startsWith("image/")
-        );
-        onImageUpload(files);
-      }
-    };
-
-    return (
-      <div className="space-y-4">
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
-            ${
-              isDragging
-                ? "border-[rgba(121,37,255,1)] bg-[rgba(242,236,255,1)]"
-                : "border-gray-300"
-            }
-            hover:border-[rgba(121,37,255,1)] transition-colors`}
-          onDragEnter={handleDragIn}
-          onDragLeave={handleDragOut}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById("fileInput")?.click()}>
-          <input
-            type="file"
-            id="fileInput"
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileInput}
-          />
-          <div className="flex flex-col items-center gap-2">
-            <svg
-              className="w-8 h-8 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <p className="text-sm text-gray-600">
-              Drag and drop images here, or click to select files
-            </p>
-          </div>
-        </div>
-
-        {images.length > 0 && (
-          <div className="grid grid-cols-4 gap-4">
-            {images.map((file, index) => (
-              <div key={index} className="relative group">
-                <div className="relative w-full h-24">
-                  <Image
-                    src={URL.createObjectURL(file)}
-                    alt={`Preview ${index + 1}`}
-                    fill
-                    className="object-cover rounded-lg"
-                  />
-                </div>
-                <button
-                  onClick={() => {
-                    const newImages = [...images];
-                    newImages.splice(index, 1);
-                    onImageUpload(newImages);
-                  }}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 
-                    opacity-0 group-hover:opacity-100 transition-opacity">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const SubmitMilestoneModal: React.FC<{
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (data: MilestoneSubmissionData) => void;
-    milestoneId: string;
-  }> = ({ isOpen, onClose, onSubmit, milestoneId }) => {
-    const [formData, setFormData] = useState<MilestoneSubmissionData>({
-      repositoryUrl: "",
-      hostingUrl: "",
-      externalFiles: "",
-      notes: "",
-      budget: 0,
-      images: [],
-      milestoneId: milestoneId,
-    });
-
-    useEffect(() => {
-      // Set the milestone ID when it changes
-      setFormData((prev) => ({ ...prev, milestoneId }));
-
-      // If the milestone exists, set the budget from the milestone
-      const milestone = milestones.find((m) => m._id === milestoneId);
-      if (milestone) {
-        setFormData((prev) => ({ ...prev, budget: milestone.amount }));
-      }
-    }, [milestoneId]);
-
-    if (!isOpen) return null;
-
-    const handleImageUpload = (files: File[]) => {
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, ...files],
-      }));
-    };
-
-    return (
-      <div className="fixed inset-0 bg-[#00000060] bg-opacity-10 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-          <h2 className="text-xl font-bold mb-4">Submit Milestone</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              onSubmit(formData);
-            }}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Repository URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.repositoryUrl}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      repositoryUrl: e.target.value,
-                    }))
-                  }
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Hosting URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.hostingUrl}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      hostingUrl: e.target.value,
-                    }))
-                  }
-                  className="w-full border rounded-lg p-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  External Files
-                </label>
-                <input
-                  type="text"
-                  value={formData.externalFiles}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      externalFiles: e.target.value,
-                    }))
-                  }
-                  className="w-full border rounded-lg p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, notes: e.target.value }))
-                  }
-                  className="w-full border rounded-lg p-2 min-h-[100px]"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Upload Images
-                </label>
-                <ImageUploadZone
-                  onImageUpload={handleImageUpload}
-                  images={formData.images}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-4 mt-6">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90">
-                Submit
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
   // Client-side fix in handleMilestoneSubmit function
-  const handleMilestoneSubmit = async (data: MilestoneSubmitData, milestoneId: string) => {
+  const handleMilestoneSubmit = async (
+    data: MilestoneSubmitData,
+    milestoneId: string
+  ) => {
     try {
       // Create FormData object for multipart form data (file uploads)
       const formData = new FormData();
-      
+
       // Add text fields
-      formData.append('milestoneId', milestoneId);
-      formData.append('repositoryUrl', data.repositoryUrl);
-      formData.append('hostingUrl', data.hostedUrl); // Note the name difference from your server
-      formData.append('externalFiles', data.externalFiles);
-      formData.append('notes', data.note); // Note the name difference from your server
-      
+      formData.append("milestoneId", milestoneId);
+      formData.append("repositoryUrl", data.repositoryUrl);
+      formData.append("hostingUrl", data.hostedUrl); // Note the name difference from your server
+      formData.append("externalFiles", data.externalFiles);
+      formData.append("notes", data.note); // Note the name difference from your server
+
       // Add all files
       data.files.forEach((file: string | Blob) => {
-        formData.append('images', file); // Make sure this matches your server's expected field name
+        formData.append("images", file); // Make sure this matches your server's expected field name
       });
-      
+
       // Log the formData keys to verify what's being sent
-      for (let pair of formData.entries()) {
+      for (const pair of formData.entries()) {
         console.log(pair[0], pair[1]);
       }
-      
+
       // Make the API call with the correct content type for file uploads
       const response = await axios.post(
         "http://localhost:8000/submit-milestone",
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
-      
-      console.log('Submission response:', response.data);
-      
+
+      console.log("Submission response:", response.data);
+
       // Handle successful submission
       if (response.data.success) {
         // Update local state to reflect the change
-        setMilestones(prev => 
-          prev.map(milestone => 
-            milestone._id === milestoneId 
-              ? { ...milestone, status: "submitted" } 
+        setMilestones((prev) =>
+          prev.map((milestone) =>
+            milestone._id === milestoneId
+              ? { ...milestone, status: "submitted" }
               : milestone
           )
         );
-        
+
         // Show success message
-        alert('Milestone submitted successfully');
+        alert("Milestone submitted successfully");
       } else {
-        throw new Error(response.data.message || 'Submission failed');
+        throw new Error(response.data.message || "Submission failed");
       }
     } catch (error) {
-      console.error('Error submitting milestone:', error);
-      alert(`Error submitting milestone: ${error.message || 'Unknown error'}`);
+      console.error("Error submitting milestone:", error);
+      if (error instanceof Error) {
+        alert(
+          `Error submitting milestone: ${error.message || "Unknown error"}`
+        );
+      } else {
+        alert("Error submitting milestone: Unknown error");
+      }
     }
   };
 
@@ -756,9 +420,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
               </div>
             </div>
             <div className="self-stretch flex items-stretch gap-[25px] my-auto">
-              <button
-                onClick={() => setDisputeModalOpen(true)}
-                className="overflow-hidden cursor-pointer text-xs text-[#ff2525] font-normal underline leading-[21px] my-auto">
+              <button className="overflow-hidden cursor-pointer text-xs text-[#ff2525] font-normal underline leading-[21px] my-auto">
                 Raise Dispute
               </button>
               <button className="overflow-hidden cursor-pointer text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
@@ -782,29 +444,29 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
         <div className="flex w-full text-base text-[rgba(13,20,28,1)] font-bold text-center mt-8 px-4 py-3 max-md:max-w-full">
           <div className="flex flex-wrap gap-4">
             {milestones
-              .filter(m => m.status === "pending")
+              .filter((m) => m.status === "pending")
               .map((milestone) => (
-                <button 
+                <button
+                  key={milestone._id}
                   onClick={() => {
                     setSelectedMilestoneId(milestone._id);
-                    setSelectedMilestoneAmount(milestone.amount)
+                    setSelectedMilestoneAmount(milestone.amount);
                     setIsModalOpen(true);
                   }}
-                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl"
-                >
+                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl">
                   Submit: {milestone.description}
                 </button>
               ))}
           </div>
         </div>
       )}
-      
+
       <MilestoneSubmitModal
-      isOpen={isModalOpen}
-      onClose={() => setIsModalOpen(false)}
-      milestoneAmount={selectedMilestoneAmount || 0}
-      onSubmit={(data) => handleMilestoneSubmit(data, selectedMilestoneId)}
-    />
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        milestoneAmount={selectedMilestoneAmount || 0}
+        onSubmit={(data) => handleMilestoneSubmit(data, selectedMilestoneId)}
+      />
     </div>
   );
 };

@@ -6,13 +6,17 @@ import MilestoneTimeline from "@/components/milestone/MilestoneTimeline";
 import MilestoneContainer from "@/components/milestone/MilestoneContainer"; // Import our updated component
 import axios from "axios";
 import { useParams } from "next/navigation";
-import Header from "@/components/layout/Header";
 
-interface Milestone {
+interface ProjectMilestone {
+  description: string;
   status: string;
-  amount: string;
-  description?: string;
-  date?: string;
+  amount: number;
+  date: string;
+  images: string[];
+  repositoryUrl: string;
+  externalFiles: string;
+  hostingUrl: string;
+  _id: string;
 }
 
 interface ProjectData {
@@ -21,32 +25,30 @@ interface ProjectData {
 }
 
 const MilestonePage = () => {
-  const [showAddMilestoneModal, setShowAddMilestoneModal] = useState(false);
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [loading, setLoading] = useState(true);
   const params = useParams();
 
-  const getProjectDetails = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `http://localhost:8000/project/${params.projectId}`
-      );
-
-      if (response.data) {
-        setProjectData(response.data.project);
-        setMilestones(response.data.milestones || []);
-      }
-    } catch (error) {
-      console.error("Error fetching project details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const getProjectDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `http://localhost:8000/project/${params.projectId}`
+        );
+
+        if (response.data) {
+          setProjectData(response.data.project);
+          setMilestones(response.data.milestones || []);
+        }
+      } catch (error) {
+        console.error("Error fetching project details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
     getProjectDetails();
   }, [params.projectId]);
 
@@ -66,15 +68,12 @@ const MilestonePage = () => {
   const calculateBudgets = () => {
     if (!projectData) return { total: "$0", released: "$0", remaining: "$0" };
 
-    const totalBudget = milestones.reduce(
-      (sum, m) => sum + (parseFloat(m.amount) || 0),
-      0
-    );
+    const totalBudget = milestones.reduce((sum, m) => sum + (m.amount || 0), 0);
 
     // Fix: Only consider "completed" and "paid" milestones as released
     const releasedAmount = milestones
       .filter((m) => m.status === "completed" || m.status === "paid")
-      .reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
+      .reduce((sum, m) => sum + (m.amount || 0), 0);
 
     const remainingAmount = totalBudget - releasedAmount;
 
@@ -114,8 +113,6 @@ const MilestonePage = () => {
   };
 
   const handleAddMilestone = () => {
-    setShowAddMilestoneModal(true);
-    // In a real application, this would open a modal to add a new milestone
     console.log("Add milestone clicked");
   };
 

@@ -8,26 +8,28 @@ import { useAuth } from "../context/AuthContext";
 const CreateJob: React.FC = () => {
   const router = useRouter();
   const { isClient, username } = useAuth();
-  
+
   useEffect(() => {
     if (!isClient) {
-      router.push('/freelancer-dashboard');
+      router.push("/freelancer-dashboard");
     }
   }, [isClient, router]);
-  
+
   // Project details state
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
 
   // Milestones state
-  const [milestones, setMilestones] = useState<Array<{
-    title: string;
-    description: string;
-    date: string;
-    amount: string;
-    completed: boolean;
-    isLast: boolean;
-  }>>([]);
+  const [milestones, setMilestones] = useState<
+    Array<{
+      title: string;
+      description: string;
+      date: string;
+      amount: string;
+      completed: boolean;
+      isLast: boolean;
+    }>
+  >([]);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -52,20 +54,20 @@ const CreateJob: React.FC = () => {
       return;
     }
     setError("");
-    
+
     try {
       const projectData = {
         name: projectTitle,
         description: projectDescription,
         milestones: milestones,
-        clientId: username
+        clientId: username,
       };
-      
+
       const response = await axios.post(
         "http://localhost:8000/create-project",
-        projectData,
+        projectData
       );
-      
+
       router.push("/funding/" + response.data.projectId);
     } catch (err) {
       setError("Failed to create project. Please try again.");
@@ -79,7 +81,7 @@ const CreateJob: React.FC = () => {
   };
 
   const handleMilestoneInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setNewMilestone({
@@ -164,11 +166,11 @@ const CreateJob: React.FC = () => {
       setError("Please enter both project title and description");
       return;
     }
-    
+
     try {
       setError("");
       setIsGenerating(true);
-      
+
       const response = await axios.post(
         "http://localhost:8000/generate-milestones",
         {
@@ -176,18 +178,29 @@ const CreateJob: React.FC = () => {
           projectDescription,
         }
       );
-      
+
       if (response.data.success) {
         // Convert API response to the format your app uses
-        const generatedMilestones = response.data.milestones.map((milestone: { title: any; description: any; formattedDate: any; amount: { toString: () => any; }; }, index: number, array: string | any[]) => ({
-          title: milestone.title,
-          description: milestone.description,
-          date: milestone.formattedDate,
-          amount: milestone.amount.toString(),
-          completed: false,
-          isLast: index === array.length - 1,
-        }));
-        
+        const generatedMilestones = response.data.milestones.map(
+          (
+            milestone: {
+              title: string;
+              description: string;
+              formattedDate: string;
+              amount: number;
+            },
+            index: number,
+            array: { length: number }
+          ) => ({
+            title: milestone.title,
+            description: milestone.description,
+            date: milestone.formattedDate,
+            amount: milestone.amount.toString(),
+            completed: false,
+            isLast: index === array.length - 1,
+          })
+        );
+
         setMilestones(generatedMilestones);
       } else {
         setError("Failed to generate milestones: " + response.data.message);
@@ -209,7 +222,8 @@ const CreateJob: React.FC = () => {
             Create a New Project
           </h1>
           <p className="text-[#4f7296] text-lg max-w-2xl">
-            Define your project details and set up milestones to track progress and payments
+            Define your project details and set up milestones to track progress
+            and payments
           </p>
         </div>
 
@@ -224,8 +238,7 @@ const CreateJob: React.FC = () => {
               <div>
                 <label
                   htmlFor="projectTitle"
-                  className="block text-sm font-medium text-[#0c141c] mb-2"
-                >
+                  className="block text-sm font-medium text-[#0c141c] mb-2">
                   Project Title
                 </label>
                 <input
@@ -241,8 +254,7 @@ const CreateJob: React.FC = () => {
               <div>
                 <label
                   htmlFor="projectDescription"
-                  className="block text-sm font-medium text-[#0c141c] mb-2"
-                >
+                  className="block text-sm font-medium text-[#0c141c] mb-2">
                   Project Description
                 </label>
                 <textarea
@@ -261,24 +273,27 @@ const CreateJob: React.FC = () => {
           <div className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
               <h2 className="font-semibold text-[#0c141c] text-xl mb-4 sm:mb-0">
-                Project Milestones {milestones.length > 0 && `(${milestones.length})`}
+                Project Milestones{" "}
+                {milestones.length > 0 && `(${milestones.length})`}
               </h2>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={generateMilestones}
-                  disabled={isGenerating || !projectTitle || !projectDescription}
+                  disabled={
+                    isGenerating || !projectTitle || !projectDescription
+                  }
                   className={`flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium
-                    ${(!projectTitle || !projectDescription || isGenerating) 
-                    ? 'bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed' 
-                    : 'bg-[#e9f4ff] text-[#4f7296] hover:bg-[#d5e8ff]'}`}
-                >
+                    ${
+                      !projectTitle || !projectDescription || isGenerating
+                        ? "bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed"
+                        : "bg-[#e9f4ff] text-[#4f7296] hover:bg-[#d5e8ff]"
+                    }`}>
                   <Wand2 size={16} className="mr-2" />
-                  {isGenerating ? 'Generating...' : 'Auto-Generate'}
+                  {isGenerating ? "Generating..." : "Auto-Generate"}
                 </button>
                 <button
                   onClick={handleAddMilestone}
-                  className="flex items-center justify-center bg-[#7925FF] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
-                >
+                  className="flex items-center justify-center bg-[#7925FF] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors">
                   <span className="mr-2">+</span> Add Milestone
                 </button>
               </div>
@@ -302,8 +317,7 @@ const CreateJob: React.FC = () => {
                   <div>
                     <label
                       htmlFor="milestoneTitle"
-                      className="block text-sm font-medium text-[#0c141c] mb-2"
-                    >
+                      className="block text-sm font-medium text-[#0c141c] mb-2">
                       Title
                     </label>
                     <input
@@ -320,8 +334,7 @@ const CreateJob: React.FC = () => {
                   <div>
                     <label
                       htmlFor="milestoneDescription"
-                      className="block text-sm font-medium text-[#0c141c] mb-2"
-                    >
+                      className="block text-sm font-medium text-[#0c141c] mb-2">
                       Description
                     </label>
                     <textarea
@@ -339,8 +352,7 @@ const CreateJob: React.FC = () => {
                     <div>
                       <label
                         htmlFor="milestoneDate"
-                        className="block text-sm font-medium text-[#0c141c] mb-2"
-                      >
+                        className="block text-sm font-medium text-[#0c141c] mb-2">
                         Due Date
                       </label>
                       <input
@@ -356,12 +368,13 @@ const CreateJob: React.FC = () => {
                     <div>
                       <label
                         htmlFor="milestoneAmount"
-                        className="block text-sm font-medium text-[#0c141c] mb-2"
-                      >
+                        className="block text-sm font-medium text-[#0c141c] mb-2">
                         Payment Amount
                       </label>
                       <div className="relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#4f7296]">$</span>
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#4f7296]">
+                          $
+                        </span>
                         <input
                           type="text"
                           id="milestoneAmount"
@@ -378,14 +391,12 @@ const CreateJob: React.FC = () => {
                   <div className="flex justify-end gap-3 pt-2">
                     <button
                       onClick={() => setShowMilestoneForm(false)}
-                      className="px-4 py-2.5 rounded-lg text-[#4f7296] hover:bg-[#e5e8ea] transition-colors text-sm font-medium"
-                    >
+                      className="px-4 py-2.5 rounded-lg text-[#4f7296] hover:bg-[#e5e8ea] transition-colors text-sm font-medium">
                       Cancel
                     </button>
                     <button
                       onClick={handleCreateMilestone}
-                      className="px-4 py-2.5 rounded-lg bg-[#7925FF] text-white transition-colors text-sm font-medium"
-                    >
+                      className="px-4 py-2.5 rounded-lg bg-[#7925FF] text-white transition-colors text-sm font-medium">
                       Save Milestone
                     </button>
                   </div>
@@ -398,7 +409,9 @@ const CreateJob: React.FC = () => {
               <div className="border border-[#e5e8ea] rounded-lg overflow-hidden mb-8">
                 <div className="divide-y divide-[#e5e8ea]">
                   {milestones.map((milestone, index) => (
-                    <div key={index} className="p-5 hover:bg-[#f7f9fc] transition-colors">
+                    <div
+                      key={index}
+                      className="p-5 hover:bg-[#f7f9fc] transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4">
                           <div className="mt-1 h-6 w-6 rounded-full bg-[#4f7296] flex items-center justify-center text-white text-xs">
@@ -412,8 +425,7 @@ const CreateJob: React.FC = () => {
                               <button
                                 onClick={() => handleRemoveMilestone(index)}
                                 className="text-[#8a9db0] hover:text-red-500 transition-colors"
-                                aria-label="Remove milestone"
-                              >
+                                aria-label="Remove milestone">
                                 <XCircle size={16} />
                               </button>
                             </div>
@@ -438,10 +450,12 @@ const CreateJob: React.FC = () => {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-[#f7f9fc] rounded-lg border border-dashed border-[#e5e8ea] mb-8">
                 <p className="text-[#4f7296] mb-4">
-                  No milestones added yet. Break your project into manageable stages.
+                  No milestones added yet. Break your project into manageable
+                  stages.
                 </p>
                 <p className="text-sm text-[#8a9db0] max-w-lg">
-                  For best results, define clear deliverables for each milestone with reasonable timeframes and payment amounts.
+                  For best results, define clear deliverables for each milestone
+                  with reasonable timeframes and payment amounts.
                 </p>
               </div>
             )}
@@ -452,10 +466,11 @@ const CreateJob: React.FC = () => {
                 onClick={handleCreateProject}
                 disabled={milestones.length === 0}
                 className={`px-8 py-3 rounded-lg font-medium text-base transition-colors 
-                  ${milestones.length === 0 
-                  ? 'bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed' 
-                  : 'bg-[#4f7296] hover:bg-[#3c5a78] text-white'}`}
-              >
+                  ${
+                    milestones.length === 0
+                      ? "bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed"
+                      : "bg-[#4f7296] hover:bg-[#3c5a78] text-white"
+                  }`}>
                 Create Project
               </button>
             </div>

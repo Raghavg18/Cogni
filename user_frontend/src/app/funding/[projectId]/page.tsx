@@ -18,13 +18,23 @@ const stripePromise = loadStripe(
 );
 
 // Payment Form Component
-const PaymentForm = ({ projectId, totalAmount, onSuccess }) => {
+interface PaymentFormProps {
+  projectId: string;
+  totalAmount: number;
+  onSuccess: (paymentId: string) => void;
+}
+
+const PaymentForm: React.FC<PaymentFormProps> = ({
+  projectId,
+  totalAmount,
+  onSuccess,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!stripe || !elements) {
@@ -36,14 +46,21 @@ const PaymentForm = ({ projectId, totalAmount, onSuccess }) => {
 
     try {
       // Create payment method
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        setError("Card details are missing");
+        setIsLoading(false);
+        return;
+      }
+
       const { error: stripeError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
-          card: elements.getElement(CardElement),
+          card: cardElement,
         });
 
       if (stripeError) {
-        setError(stripeError.message);
+        setError(stripeError.message || "");
         setIsLoading(false);
         return;
       }
@@ -63,7 +80,8 @@ const PaymentForm = ({ projectId, totalAmount, onSuccess }) => {
     } catch (err) {
       console.error("Payment error:", err);
       setError(
-        err.response?.data?.message || "Payment failed. Please try again."
+        (axios.isAxiosError(err) && err.response?.data?.message) ||
+          "Payment failed. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -107,8 +125,7 @@ const PaymentForm = ({ projectId, totalAmount, onSuccess }) => {
         disabled={!stripe || isLoading}
         className={`w-full bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-4 py-2 rounded-md ${
           isLoading ? "opacity-70 cursor-not-allowed" : ""
-        }`}
-      >
+        }`}>
         {isLoading ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
       </button>
     </form>
@@ -117,9 +134,18 @@ const PaymentForm = ({ projectId, totalAmount, onSuccess }) => {
 
 const SelectFreelancer = () => {
   const router = useRouter();
-  const [freelancers, setFreelancers] = useState([]);
-  const [selectedFreelancer, setSelectedFreelancer] = useState(null);
-  const [projectData, setProjectData] = useState(null);
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
+  const [selectedFreelancer, setSelectedFreelancer] =
+    useState<Freelancer | null>(null);
+  interface Project {
+    project: {
+      _id: string;
+      description: string;
+    };
+    milestones: { amount: string; description: string }[];
+  }
+
+  const [projectData, setProjectData] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -128,7 +154,9 @@ const SelectFreelancer = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const params = useParams();
   useEffect(() => {
-    const projectId = params.projectId;
+    const projectId = Array.isArray(params.projectId)
+      ? params.projectId[0]
+      : params.projectId;
 
     if (projectId) {
       fetchProjectDetails(projectId);
@@ -148,7 +176,8 @@ const SelectFreelancer = () => {
 
       // Calculate total amount from milestones
       const total = response.data.milestones.reduce(
-        (sum, milestone) => sum + parseFloat(milestone.amount || 0),
+        (sum: number, milestone: { amount: string }) =>
+          sum + parseFloat(milestone.amount || "0"),
         0
       );
       setTotalAmount(total);
@@ -177,7 +206,13 @@ const SelectFreelancer = () => {
   };
 
   // Handle freelancer selection
-  const handleSelectFreelancer = (freelancer) => {
+  interface Freelancer {
+    _id: string;
+    username: string;
+    // Add other properties as needed
+  }
+
+  const handleSelectFreelancer = (freelancer: Freelancer) => {
     setSelectedFreelancer(freelancer);
   };
 
@@ -192,7 +227,7 @@ const SelectFreelancer = () => {
   };
 
   // Handle payment success
-  const handlePaymentSuccess = (paymentId) => {
+  const handlePaymentSuccess = (paymentId: string) => {
     setPaymentIntentId(paymentId);
     setPaymentSuccess(true);
 
@@ -203,16 +238,22 @@ const SelectFreelancer = () => {
   // Update project with selected freelancer
   const updateProjectWithFreelancer = async () => {
     try {
-      await axios.put(
-        `http://localhost:8000/project/${projectData.project._id}/assign-freelancer`,
-        {
-          freelancerId: selectedFreelancer._id,
-        }
-      );
+      if (projectData && selectedFreelancer) {
+        await axios.put(
+          `http://localhost:8000/project/${projectData.project._id}/assign-freelancer`,
+          {
+            freelancerId: selectedFreelancer._id,
+          }
+        );
+      } else {
+        setError("Project data or freelancer is missing");
+      }
 
       // Redirect to project dashboard after a short delay
       setTimeout(() => {
-        router.push(`/client-dashboard/${projectData.project._id}`);
+        if (projectData) {
+          router.push(`/client-dashboard/${projectData.project._id}`);
+        }
       }, 3000);
     } catch (err) {
       console.error("Error assigning freelancer:", err);
@@ -245,8 +286,7 @@ const SelectFreelancer = () => {
                               item.active
                                 ? "text-[rgba(13,20,28,1)]"
                                 : "text-[rgba(79,115,150,1)] hover:text-foreground"
-                            }`}
-                          >
+                            }`}>
                             {item.label}
                           </a>
                         </li>
@@ -254,8 +294,7 @@ const SelectFreelancer = () => {
                           <li
                             role="presentation"
                             aria-hidden="true"
-                            className="mx-1 text-[rgba(79,115,150,1)]"
-                          >
+                            className="mx-1 text-[rgba(79,115,150,1)]">
                             /
                           </li>
                         )}
@@ -300,8 +339,7 @@ const SelectFreelancer = () => {
                             height="32"
                             viewBox="0 0 24 24"
                             fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
+                            xmlns="http://www.w3.org/2000/svg">
                             <path
                               d="M20 6L9 17L4 12"
                               stroke="green"
@@ -353,8 +391,7 @@ const SelectFreelancer = () => {
                                   (milestone, index) => (
                                     <div
                                       key={index}
-                                      className="mb-2 pb-2 border-b border-[rgba(229,232,235,1)] last:border-0 last:mb-0 last:pb-0"
-                                    >
+                                      className="mb-2 pb-2 border-b border-[rgba(229,232,235,1)] last:border-0 last:mb-0 last:pb-0">
                                       <div className="flex justify-between">
                                         <span className="font-medium text-[rgba(13,20,28,1)]">
                                           {milestone.description ||
@@ -390,13 +427,13 @@ const SelectFreelancer = () => {
                             <div className="bg-[rgba(247,250,252,1)] p-4 rounded-md mb-4">
                               <div className="flex items-center mb-4">
                                 <div className="w-10 h-10 bg-[rgba(79,115,150,1)] rounded-full flex items-center justify-center text-white font-bold mr-3">
-                                  {selectedFreelancer.username
+                                  {selectedFreelancer?.username
                                     .charAt(0)
                                     .toUpperCase()}
                                 </div>
                                 <div>
                                   <h4 className="font-medium text-[rgba(13,20,28,1)]">
-                                    {selectedFreelancer.username}
+                                    {selectedFreelancer?.username}
                                   </h4>
                                   <p className="text-sm text-[rgba(79,115,150,1)]">
                                     Freelancer
@@ -416,7 +453,7 @@ const SelectFreelancer = () => {
 
                             <Elements stripe={stripePromise}>
                               <PaymentForm
-                                projectId={projectData.project._id}
+                                projectId={projectData?.project._id || ""}
                                 totalAmount={totalAmount}
                                 onSuccess={handlePaymentSuccess}
                               />
@@ -424,8 +461,7 @@ const SelectFreelancer = () => {
 
                             <button
                               onClick={() => setShowPaymentForm(false)}
-                              className="mt-3 w-full bg-[rgba(229,232,235,1)] text-[rgba(13,20,28,1)] px-4 py-2 rounded-md"
-                            >
+                              className="mt-3 w-full bg-[rgba(229,232,235,1)] text-[rgba(13,20,28,1)] px-4 py-2 rounded-md">
                               Back to Freelancer Selection
                             </button>
                           </div>
@@ -445,14 +481,14 @@ const SelectFreelancer = () => {
                                   <div
                                     key={freelancer._id}
                                     className={`p-4 border rounded-md cursor-pointer transition-all ${
-                                      selectedFreelancer?._id === freelancer._id
+                                      selectedFreelancer &&
+                                      selectedFreelancer._id === freelancer._id
                                         ? "border-[rgba(79,115,150,1)] bg-[rgba(247,250,252,1)]"
                                         : "border-[rgba(229,232,235,1)] hover:border-[rgba(79,115,150,1)]"
                                     }`}
                                     onClick={() =>
                                       handleSelectFreelancer(freelancer)
-                                    }
-                                  >
+                                    }>
                                     <div className="flex items-center">
                                       <div className="w-12 h-12 bg-[rgba(79,115,150,1)] rounded-full flex items-center justify-center text-white font-bold mr-4">
                                         {freelancer.username
@@ -476,8 +512,7 @@ const SelectFreelancer = () => {
                                               height="12"
                                               viewBox="0 0 12 12"
                                               fill="none"
-                                              xmlns="http://www.w3.org/2000/svg"
-                                            >
+                                              xmlns="http://www.w3.org/2000/svg">
                                               <path
                                                 d="M10 3L4.5 8.5L2 6"
                                                 stroke="white"
@@ -500,8 +535,7 @@ const SelectFreelancer = () => {
                               <div className="mt-6 flex justify-center">
                                 <button
                                   onClick={handleContinueToPayment}
-                                  className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-8 py-3 rounded-md font-medium text-base"
-                                >
+                                  className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-8 py-3 rounded-md font-medium text-base">
                                   Continue to Payment
                                 </button>
                               </div>

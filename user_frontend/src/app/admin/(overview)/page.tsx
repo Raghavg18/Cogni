@@ -11,7 +11,7 @@ const Index = () => {
             Overview
           </h1>
           <p className="text-gray-500 animate-slide-in">
-            Welcome to your dashboard, here's what's happening today.
+            Welcome to your dashboard, here&apos;s what&apos;s happening today.
           </p>
         </div>
 

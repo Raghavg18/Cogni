@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 interface MilestoneCardProps {
@@ -17,7 +18,6 @@ const MilestoneCard: React.FC<MilestoneCardProps> = ({
   iconSrc,
   iconBgColor,
   onViewDetails,
-  onRelease,
 }) => {
   const getStatusBgColor = () => {
     switch (status) {
@@ -45,12 +45,15 @@ const MilestoneCard: React.FC<MilestoneCardProps> = ({
     <div className="flex min-h-[72px] w-full items-center gap-[40px_100px] justify-between flex-wrap px-4 py-3 max-md:max-w-full">
       <div className="self-stretch flex min-w-60 items-center gap-4 my-auto">
         <div
-          className={`${iconBgColor} self-stretch flex min-h-12 items-center justify-center w-12 h-12 my-auto rounded-lg`}
-        >
-          <img
-            src={iconSrc}
-            className="aspect-[1] object-contain w-6 self-stretch my-auto"
-          />
+          className={`${iconBgColor} self-stretch flex min-h-12 items-center justify-center w-12 h-12 my-auto rounded-lg`}>
+          <div className="relative w-6">
+            <Image
+              src={iconSrc}
+              className="aspect-[1] object-contain self-stretch my-auto"
+              fill
+              alt="image"
+            />
+          </div>
         </div>
         <div className="self-stretch flex min-w-60 flex-col items-stretch justify-center w-[314px] my-auto">
           <div className="max-w-full w-[314px] overflow-hidden text-base text-[rgba(13,20,28,1)] font-medium">
@@ -67,15 +70,13 @@ const MilestoneCard: React.FC<MilestoneCardProps> = ({
         {onViewDetails && (
           <button
             onClick={onViewDetails}
-            className="overflow-hidden text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto"
-          >
+            className="overflow-hidden text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
             View Details
           </button>
         )}
         <div className="text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap text-center">
           <div
-            className={`${getStatusBgColor()} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}
-          >
+            className={`${getStatusBgColor()} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}>
             <div className="self-stretch w-16 overflow-hidden my-auto">
               {getStatusText()}
             </div>

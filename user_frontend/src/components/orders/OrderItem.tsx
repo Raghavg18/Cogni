@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 interface OrderItemProps {
@@ -18,11 +19,14 @@ const OrderItem: React.FC<OrderItemProps> = ({
   return (
     <div className="order-item flex min-h-[72px] justify-between items-center bg-[#F7FAFC] px-4 py-2 max-sm:flex-col max-sm:items-start max-sm:gap-3">
       <div className="order-info flex items-center gap-4">
-        <img
-          src={image}
-          alt="Project thumbnail"
-          className="w-14 h-14 rounded-lg"
-        />
+        <div className="relative w-14 h-14">
+          <Image
+            src={image}
+            alt="Project thumbnail"
+            fill
+            className="rounded-lg"
+          />
+        </div>
         <div className="order-details flex flex-col gap-1">
           <div className="order-title text-base leading-6 text-[#0D141C]">
             {title}
