@@ -118,23 +118,67 @@ app.post("/connect-stripe", async (req, res) => {
       message: "Only freelancers can connect to Stripe",
     });
   }
-  if (user.stripeAccountId) {
-    return res.json({
-      success: true,
-      message: "Already connected to Stripe",
-      stripeAccountId: user.stripeAccountId,
+  
+  try {
+    if (user.stripeAccountId) {
+      // Check if the account has transfers capability
+      const account = await stripe.accounts.retrieve(user.stripeAccountId);
+      
+      if (account.capabilities && account.capabilities.transfers === "active") {
+        return res.json({
+          success: true,
+          message: "Already connected to Stripe with transfers capability",
+          stripeAccountId: user.stripeAccountId,
+        });
+      } else {
+        // Create an account link for completing verification
+        const accountLink = await stripe.accountLinks.create({
+          account: user.stripeAccountId,
+          refresh_url: `http://localhost:3000/stripe-refresh?username=${username}`,
+          return_url: `http://localhost:3000/stripe-return?username=${username}`,
+          type: 'account_onboarding',
+        });
+        
+        return res.json({ 
+          success: true, 
+          message: "Account needs to complete transfers setup",
+          accountLink: accountLink.url 
+        });
+      }
+    }
+    
+    // Create a new account with transfers capability
+    const account = await stripe.accounts.create({
+      type: "express",
+      capabilities: {
+        transfers: { requested: true },
+      },
+    });
+    
+    user.stripeAccountId = account.id;
+    await user.save();
+    
+    // Create an account link for the user to complete setup
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: `http://localhost:3000/stripe-refresh?username=${username}`,
+      return_url: `http://localhost:3000/onboarding`,
+      type: 'account_onboarding',
+    });
+    
+    res.json({ 
+      success: true, 
+      stripeAccountId: account.id,
+      accountLink: accountLink.url
+    });
+  } catch (error) {
+    console.error("Stripe connection error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to connect to Stripe",
+      error: error.message 
     });
   }
-  const account = await stripe.accounts.create({
-    type: "express",
-    capabilities: {
-      transfers: { requested: true },
-    },
-  });
-  user.stripeAccountId = account.id;
-  await user.save();
-
-  res.json({ success: true, stripeAccountId: account.id });
 });
 
 app.post("/create-project", async (req, res) => {
@@ -165,17 +209,20 @@ app.post("/fund-escrow", async (req, res) => {
   const project = await Project.findById(projectId);
   if (!project) return res.status(404).json({ message: "Project not found" });
 
+  // Create and immediately capture the payment from client
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amount * 100,
     currency: "usd",
     payment_method: paymentMethodId,
     confirm: true,
-    capture_method: "manual",
+    // Remove capture_method: "manual" to charge immediately
     automatic_payment_methods: {
       enabled: true,
       allow_redirects: "never",
     },
+    description: `Escrow funding for Project: ${project.name}`,
   });
+  
   await Milestone.updateMany(
     { projectId: projectId, status: "pending" },
     { $set: { paymentIntentId: paymentIntent.id } }
@@ -199,16 +246,12 @@ app.post("/release-payment", async (req, res) => {
 
     const milestone = await Milestone.findById(milestoneId);
     if (!milestone) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Milestone not found" });
+      return res.status(404).json({ success: false, message: "Milestone not found" });
     }
 
     const project = await Project.findById(milestone.projectId);
     if (!project) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+      return res.status(404).json({ success: false, message: "Project not found" });
     }
 
     const freelancer = await User.findOne({ username: project.freelancerId });
@@ -218,16 +261,30 @@ app.post("/release-payment", async (req, res) => {
         message: "Freelancer Stripe account not found",
       });
     }
+    
+    // Capture the payment from the client first
     await stripe.paymentIntents.capture(milestone.paymentIntentId);
+    
+    // Check if the freelancer account has transfers capability
     const account = await stripe.accounts.retrieve(freelancer.stripeAccountId);
+    
     if (!account.capabilities || account.capabilities.transfers !== "active") {
-      await stripe.accounts.update(freelancer.stripeAccountId, {
-        capabilities: {
-          transfers: { requested: true },
-        },
+      // Create an account link for the freelancer to complete setup
+      const accountLink = await stripe.accountLinks.create({
+        account: freelancer.stripeAccountId,
+        refresh_url: `http://localhost:3000/stripe-refresh?milestoneId=${milestoneId}`,
+        return_url: `http://localhost:3000/stripe-return?milestoneId=${milestoneId}`,
+        type: 'account_onboarding',
       });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      return res.status(400).json({
+        success: false,
+        message: "Freelancer needs to complete Stripe account setup before receiving payments",
+        accountLink: accountLink.url
+      });
     }
+    
+    // Now create the transfer
     const transfer = await stripe.transfers.create({
       amount: milestone.amount * 100,
       currency: "usd",
@@ -249,7 +306,7 @@ app.post("/release-payment", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to release payment",
-      error: error.message,
+      error: error.message 
     });
   }
 });
@@ -420,6 +477,36 @@ app.get("/milestone/:milestoneId", async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: "Server error", 
+      error: error.message 
+    });
+  }
+});
+
+app.get("/check-stripe-status/:username", async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ username });
+    
+    if (!user || !user.stripeAccountId) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User or Stripe account not found" 
+      });
+    }
+    
+    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+    
+    res.json({
+      success: true,
+      accountId: user.stripeAccountId,
+      capabilities: account.capabilities,
+      transfersEnabled: account.capabilities && account.capabilities.transfers === "active"
+    });
+  } catch (error) {
+    console.error("Error checking Stripe status:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to check Stripe account status",
       error: error.message 
     });
   }
