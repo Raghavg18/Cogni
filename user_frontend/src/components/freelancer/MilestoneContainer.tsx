@@ -48,6 +48,80 @@ interface Project {
   updatedAt: string;
 }
 
+interface DisputeData {
+  disputeTitle: string;
+}
+
+const getFormattedDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  };
+  return date.toLocaleDateString("en-US", options);
+};
+
+const HandleRaiseDispute: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: DisputeData) => void;
+}> = ({ isOpen, onClose, onSubmit }) => {
+  const [formData, setFormData] = useState<DisputeData>({
+    disputeTitle: "",
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-[#00000060] bg-opacity-10 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+        <h2 className="text-xl font-bold mb-4">Submit Milestone</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit(formData);
+          }}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Write about your dispute
+              </label>
+              <textarea
+                value={formData.disputeTitle}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    disputeTitle: e.target.value,
+                  }))
+                }
+                className="w-full border rounded-lg p-2"
+                required
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[rgba(121,37,255,1)] text-white rounded-lg hover:bg-opacity-90"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const TimelineItem: React.FC<TimelineItemProps> = ({
   title,
   date,
@@ -120,6 +194,7 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
 
 const MilestoneContainer: React.FC = (projectId) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -130,8 +205,10 @@ const MilestoneContainer: React.FC = (projectId) => {
     const fetchProjectData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:8000/project/${projectId.projectId}`);
-        console.log(response)
+        const response = await fetch(
+          `http://localhost:8000/project/${projectId.projectId}`
+        );
+        console.log(response);
         if (!response.ok) {
           throw new Error("Failed to fetch project data");
         }
@@ -150,7 +227,10 @@ const MilestoneContainer: React.FC = (projectId) => {
   }, [projectId]);
 
   // Calculate budget numbers
-  const totalBudget = milestones.reduce((sum, milestone) => sum + milestone.amount, 0);
+  const totalBudget = milestones.reduce(
+    (sum, milestone) => sum + milestone.amount,
+    0
+  );
   const receivedAmount = milestones
     .filter((milestone) => milestone.status === "paid")
     .reduce((sum, milestone) => sum + milestone.amount, 0);
@@ -160,9 +240,10 @@ const MilestoneContainer: React.FC = (projectId) => {
   const completedMilestones = milestones.filter(
     (milestone) => milestone.status === "paid"
   ).length;
-  const progress = milestones.length > 0
-    ? Math.round((completedMilestones / milestones.length) * 100)
-    : 0;
+  const progress =
+    milestones.length > 0
+      ? Math.round((completedMilestones / milestones.length) * 100)
+      : 0;
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -175,13 +256,9 @@ const MilestoneContainer: React.FC = (projectId) => {
     }
   };
 
-  const getFormattedDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
-  };
-
-  const getMilestoneStatus = (status: string): "completed" | "active" | "pending" => {
+  const getMilestoneStatus = (
+    status: string
+  ): "completed" | "active" | "pending" => {
     switch (status) {
       case "paid":
         return "completed";
@@ -356,12 +433,12 @@ const MilestoneContainer: React.FC = (projectId) => {
 
     useEffect(() => {
       // Set the milestone ID when it changes
-      setFormData(prev => ({ ...prev, milestoneId }));
-      
+      setFormData((prev) => ({ ...prev, milestoneId }));
+
       // If the milestone exists, set the budget from the milestone
-      const milestone = milestones.find(m => m._id === milestoneId);
+      const milestone = milestones.find((m) => m._id === milestoneId);
       if (milestone) {
-        setFormData(prev => ({ ...prev, budget: milestone.amount }));
+        setFormData((prev) => ({ ...prev, budget: milestone.amount }));
       }
     }, [milestoneId]);
 
@@ -479,18 +556,21 @@ const MilestoneContainer: React.FC = (projectId) => {
 
   const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
     try {
-      console.log(data)
-      const response = await axios.post("http://localhost:8000"+"/submit-milestone",data)
-      console.log(response)
+      console.log(data);
+      const response = await axios.post(
+        "http://localhost:8000" + "/submit-milestone",
+        data
+      );
+      console.log(response);
       if (!response) {
         throw new Error("Failed to submit milestone");
       }
 
       // Update the local state to reflect changes
-      setMilestones(prev => 
-        prev.map(milestone => 
-          milestone._id === data.milestoneId 
-            ? { ...milestone, status: "submitted" } 
+      setMilestones((prev) =>
+        prev.map((milestone) =>
+          milestone._id === data.milestoneId
+            ? { ...milestone, status: "submitted" }
             : milestone
         )
       );
@@ -532,7 +612,6 @@ const MilestoneContainer: React.FC = (projectId) => {
           </div>
         </div>
       </nav>
-
       {/* Title and Progress */}
       <div className="w-full max-md:max-w-full">
         <div className="flex gap-[12px_0px] text-[32px] text-[rgba(13,20,28,1)] font-bold leading-none justify-between flex-wrap p-4">
@@ -551,12 +630,11 @@ const MilestoneContainer: React.FC = (projectId) => {
           </div>
         </div>
       </div>
-
       {/* Budget Cards */}
       <div className="flex w-full items-stretch gap-[37px] flex-wrap mt-8 rounded-2xl max-md:max-w-full">
-        <BudgetCard 
-          title="Total Budget" 
-          amount={`$${totalBudget.toLocaleString()}`} 
+        <BudgetCard
+          title="Total Budget"
+          amount={`$${totalBudget.toLocaleString()}`}
         />
         <BudgetCard
           title="Received"
@@ -569,7 +647,6 @@ const MilestoneContainer: React.FC = (projectId) => {
           textColor="text-[rgba(105,105,105,1)]"
         />
       </div>
-
       {/* Timeline Section */}
       <section className="w-full mt-8 max-md:max-w-full">
         <h2 className="text-lg text-[rgba(13,20,28,1)] font-bold leading-none pt-4 pb-2 px-4 max-md:max-w-full">
@@ -587,10 +664,9 @@ const MilestoneContainer: React.FC = (projectId) => {
           ))}
         </div>
       </section>
-
       {/* Milestone Items */}
       {milestones.map((milestone) => (
-        <div 
+        <div
           key={milestone._id}
           className="bg-white flex w-full flex-col items-stretch justify-center mt-8 py-2.5 rounded-2xl max-md:max-w-full"
         >
@@ -619,16 +695,27 @@ const MilestoneContainer: React.FC = (projectId) => {
                   {milestone.description}
                 </div>
                 <div className="w-[253px] max-w-full overflow-hidden text-sm text-[rgba(79,115,150,1)] font-normal">
-                  ${milestone.amount.toLocaleString()} - {getFormattedDate(milestone.updatedAt)}
+                  ${milestone.amount.toLocaleString()} -{" "}
+                  {getFormattedDate(milestone.updatedAt)}
                 </div>
               </div>
             </div>
-            <div className="self-stretch flex items-stretch gap-[25px] w-[194px] my-auto">
-              <button className="overflow-hidden text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
+            <div className="self-stretch flex items-stretch gap-[25px] my-auto">
+              <button
+                onClick={() => setDisputeModalOpen(true)}
+                className="overflow-hidden cursor-pointer text-xs text-[#ff2525] font-normal underline leading-[21px] my-auto"
+              >
+                Raise Dispute
+              </button>
+              <button className="overflow-hidden cursor-pointer text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
                 View Details
               </button>
               <div className="text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap text-center">
-                <div className={`${getStatusColor(milestone.status)} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}>
+                <div
+                  className={`${getStatusColor(
+                    milestone.status
+                  )} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}
+                >
                   <div className="self-stretch w-16 overflow-hidden my-auto">
                     {getStatusLabel(milestone.status)}
                   </div>
@@ -638,14 +725,13 @@ const MilestoneContainer: React.FC = (projectId) => {
           </div>
         </div>
       ))}
-
-      {/* Submit Button - Only show for pending milestones */}
-      {milestones.some(m => m.status === "pending") && (
+      {milestones.some((m) => m.status === "pending") && (
         <div className="flex w-full text-base text-[rgba(13,20,28,1)] font-bold text-center mt-8 px-4 py-3 max-md:max-w-full">
           <div className="flex flex-wrap gap-4">
             {milestones
-              .filter(m => m.status === "pending")
-              .map(milestone => (
+              .filter((m) => m.status === "pending")
+              .slice(0, 1)
+              .map((milestone) => (
                 <button
                   key={milestone._id}
                   onClick={() => handleSubmit(milestone._id)}
@@ -659,12 +745,19 @@ const MilestoneContainer: React.FC = (projectId) => {
           </div>
         </div>
       )}
-      
       <SubmitMilestoneModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleMilestoneSubmit}
         milestoneId={selectedMilestoneId}
+      />
+      <HandleRaiseDispute
+        isOpen={disputeModalOpen}
+        onClose={() => setDisputeModalOpen(false)}
+        onSubmit={(data: DisputeData) => {
+          // Handle dispute submission
+          console.log("Dispute submitted:", data);
+        }}
       />
     </div>
   );
