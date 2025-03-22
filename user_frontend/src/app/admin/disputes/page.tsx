@@ -69,34 +69,34 @@ export default function DisputesPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
-      <div className="p-6 max-w-7xl mx-auto">
-        {/* Header with Search and Filter */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div className="p-8 max-w-[1400px] mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <h1 className="[font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-[32px] leading-10">
+            <h1 className="text-2xl font-semibold text-[#0c141c] mb-1">
               Dispute Management
             </h1>
-            <p className="[font-family:'Be_Vietnam_Pro',Helvetica] text-[#4f7296] text-lg">
+            <p className="text-[#4f7296] text-base">
               {filteredDisputes.length} active disputes
             </p>
           </div>
           
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
             <div className="relative flex-1 md:flex-initial">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7296] w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search disputes..."
-                className="w-full md:w-[250px] h-10 pl-10 pr-4 rounded-xl border border-[#e5e8ea] focus:outline-none focus:ring-2 focus:ring-[#7825ff]"
+                className="w-full md:w-[220px] h-9 pl-9 pr-3 rounded-lg border border-[#e5e8ea] text-sm focus:outline-none focus:ring-2 focus:ring-[#7825ff]"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7296] w-4 h-4 pointer-events-none" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#4f7296] w-4 h-4" />
               <select
-                className="appearance-none w-[140px] h-10 pl-10 rounded-xl border border-[#e5e8ea] bg-white focus:outline-none focus:ring-2 focus:ring-[#7825ff] cursor-pointer text-[#0c141c] font-medium"
+                className="appearance-none w-[130px] h-9 pl-9 pr-3 rounded-lg border border-[#e5e8ea] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#7825ff] cursor-pointer text-[#0c141c]"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -115,34 +115,34 @@ export default function DisputesPage() {
         </div>
 
         {/* Disputes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredDisputes.map((dispute) => (
             <Card 
               key={dispute.id}
-              className="cursor-pointer hover:shadow-lg transition-all duration-200 border-t-4"
+              className="cursor-pointer hover:shadow-sm transition-all duration-200 border-t-[3px]"
               style={{
                 borderTopColor: dispute.status === 'pending' ? '#ffeca0' : 
                                dispute.status === 'accepted' ? '#beffbe' : '#ffd4d4'
               }}
               onClick={() => router.push(`/admin/disputes/${dispute.id}`)}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="[font-family:'Be_Vietnam_Pro',Helvetica] font-semibold text-[#0c141c] text-lg line-clamp-2">
+                  <h3 className="font-medium text-[#0c141c] text-base line-clamp-2">
                     {dispute.title}
                   </h3>
-                  <Badge className={getStatusBadgeStyles(dispute.status)}>
+                  <Badge className={`text-xs font-medium ${getStatusBadgeStyles(dispute.status)}`}>
                     {dispute.status}
                   </Badge>
                 </div>
 
-                <p className="text-[#4f7296] text-sm mb-4 line-clamp-2">
+                <p className="text-[#4f7296] text-sm mb-3 line-clamp-2">
                   {dispute.description}
                 </p>
 
-                <div className="space-y-3 text-sm">
+                <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-[#4f7296]">Amount in Dispute</span>
+                    <span className="text-[#4f7296]">Amount</span>
                     <span className="font-medium text-[#0c141c]">${dispute.amount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -153,7 +153,7 @@ export default function DisputesPage() {
                     <span className="text-[#4f7296]">Against</span>
                     <span className="font-medium text-[#0c141c]">{dispute.contractorName}</span>
                   </div>
-                  <div className="pt-2 border-t">
+                  <div className="pt-2 border-t border-[#e5e8ea]">
                     <span className="text-[#4f7296] text-xs">
                       Filed {new Date(dispute.createdAt).toLocaleString('en-US', {
                         month: 'short',
@@ -171,8 +171,8 @@ export default function DisputesPage() {
         </div>
 
         {filteredDisputes.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-[#4f7296] text-lg">No disputes found</p>
+          <div className="text-center py-8">
+            <p className="text-[#4f7296] text-base">No disputes found</p>
           </div>
         )}
       </div>

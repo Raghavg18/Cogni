@@ -9,6 +9,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  ArrowDownUp,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -26,6 +27,11 @@ const Sidebar = () => {
       path: "/admin/employers",
       label: "Employers",
       icon: <Briefcase size={20} />,
+    },
+    {
+      path: "/admin/disputes",
+      label: "Disputes",
+      icon: <ArrowDownUp size={20} />,
     },
   ];
 

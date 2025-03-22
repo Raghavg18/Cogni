@@ -57,7 +57,7 @@ const Page = () => {
       else{
         router.push("/dashboard")
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || "An error occurred during login");
       console.error("Login error:", err);
     } finally {
