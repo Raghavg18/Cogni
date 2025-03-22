@@ -2,6 +2,7 @@
 import axios from "axios";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
+import MilestoneSubmitModal, { MilestoneSubmitData } from "./MilestoneSubmitModal";
 
 interface TimelineItemProps {
   title: string;
@@ -228,6 +229,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
+  const [selectedMilestoneAmount,setSelectedMilestoneAmount] = useState<number>()
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -582,44 +584,63 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
     );
   };
 
-  const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
+  // Client-side fix in handleMilestoneSubmit function
+  const handleMilestoneSubmit = async (data: MilestoneSubmitData, milestoneId: string) => {
     try {
-      console.log(data);
-      const response = await axios.post(
-        "http://localhost:8000" + "/submit-milestone",
-        data
-      );
-      console.log(response);
-      if (!response) {
-        throw new Error("Failed to submit milestone");
+      // Create FormData object for multipart form data (file uploads)
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('milestoneId', milestoneId);
+      formData.append('repositoryUrl', data.repositoryUrl);
+      formData.append('hostingUrl', data.hostedUrl); // Note the name difference from your server
+      formData.append('externalFiles', data.externalFiles);
+      formData.append('notes', data.note); // Note the name difference from your server
+      
+      // Add all files
+      data.files.forEach((file: string | Blob) => {
+        formData.append('images', file); // Make sure this matches your server's expected field name
+      });
+      
+      // Log the formData keys to verify what's being sent
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
       }
-
-      // Update the local state to reflect changes
-      setMilestones((prev) =>
-        prev.map((milestone) =>
-          milestone._id === data.milestoneId
-            ? { ...milestone, status: "submitted" }
-            : milestone
-        )
+      
+      // Make the API call with the correct content type for file uploads
+      const response = await axios.post(
+        "http://localhost:8000/submit-milestone",
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
       );
-
-      setIsModalOpen(false);
+      
+      console.log('Submission response:', response.data);
+      
+      // Handle successful submission
+      if (response.data.success) {
+        // Update local state to reflect the change
+        setMilestones(prev => 
+          prev.map(milestone => 
+            milestone._id === milestoneId 
+              ? { ...milestone, status: "submitted" } 
+              : milestone
+          )
+        );
+        
+        // Show success message
+        alert('Milestone submitted successfully');
+      } else {
+        throw new Error(response.data.message || 'Submission failed');
+      }
     } catch (error) {
-      console.error("Error submitting milestone:", error);
+      console.error('Error submitting milestone:', error);
+      alert(`Error submitting milestone: ${error.message || 'Unknown error'}`);
     }
   };
-
-  if (loading) {
-    return <div className="p-8 text-center">Loading project data...</div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-center text-red-500">{error}</div>;
-  }
-
-  if (!project) {
-    return <div className="p-8 text-center">Project not found</div>;
-  }
 
   return (
     <div className="min-w-60 w-full max-w-[960px] overflow-hidden flex-1 shrink basis-[0%] max-md:max-w-full">
@@ -643,7 +664,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       {/* Title and Progress */}
       <div className="w-full max-md:max-w-full">
         <div className="flex gap-[12px_0px] text-[32px] text-[rgba(13,20,28,1)] font-bold leading-none justify-between flex-wrap p-4">
-          <h1 className="min-w-72 w-72">{project.name}</h1>
+          <h1 className="min-w-72 w-72">{project?.name}</h1>
         </div>
         <div className="w-full p-4 max-md:max-w-full">
           <div className="flex w-full gap-[40px_100px] text-[rgba(13,20,28,1)] whitespace-nowrap justify-between flex-wrap max-md:max-w-full">
@@ -761,35 +782,29 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
         <div className="flex w-full text-base text-[rgba(13,20,28,1)] font-bold text-center mt-8 px-4 py-3 max-md:max-w-full">
           <div className="flex flex-wrap gap-4">
             {milestones
-              .filter((m) => m.status === "pending")
-              .slice(0, 1)
-              .map((milestone) => (
-                <button
-                  key={milestone._id}
-                  onClick={() => handleSubmit(milestone._id)}
-                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl">
-                  <div className="self-stretch overflow-hidden my-auto">
-                    Submit: {milestone.description}
-                  </div>
+              .filter(m => m.status === "pending")
+              .map(milestone => (
+                <button 
+                  onClick={() => {
+                    setSelectedMilestoneId(milestone._id);
+                    setSelectedMilestoneAmount(milestone.amount)
+                    setIsModalOpen(true);
+                  }}
+                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl"
+                >
+                  Submit: {milestone.description}
                 </button>
               ))}
           </div>
         </div>
       )}
-      <SubmitMilestoneModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleMilestoneSubmit}
-        milestoneId={selectedMilestoneId}
-      />
-      <HandleRaiseDispute
-        isOpen={disputeModalOpen}
-        onClose={() => setDisputeModalOpen(false)}
-        onSubmit={(data: DisputeData) => {
-          // Handle dispute submission
-          console.log("Dispute submitted:", data);
-        }}
-      />
+      
+      <MilestoneSubmitModal
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      milestoneAmount={selectedMilestoneAmount || 0}
+      onSubmit={(data) => handleMilestoneSubmit(data, selectedMilestoneId)}
+    />
     </div>
   );
 };

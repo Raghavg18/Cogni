@@ -21,7 +21,7 @@ const StripeOnboardingPage = () => {
   }, []);
 
   // Function to check Stripe account status
-  const checkStripeStatus = async (user) => {
+  const checkStripeStatus = async (user: string) => {
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:8000/check-stripe-status/${user}`);
