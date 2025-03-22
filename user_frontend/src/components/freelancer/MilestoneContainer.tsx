@@ -1,7 +1,6 @@
 "use client";
 import axios from "axios";
 import React, { useState, useEffect } from "react";
-import { MilestoneSubmitData } from "./MilestoneSubmitModal";
 
 interface TimelineItemProps {
   title: string;
@@ -478,62 +477,41 @@ const MilestoneContainer: React.FC = (projectId) => {
     );
   };
 
-  // Fixed handleMilestoneSubmit function
-const handleMilestoneSubmit = async (data: MilestoneSubmitData, milestoneId: string) => {
-  try {
-    // Create a FormData object to handle file uploads
-    const formData = new FormData();
-    
-    // Add the milestone ID
-    formData.append('milestoneId', milestoneId);
-    
-    // Add other fields (matching the backend field names)
-    formData.append('repositoryUrl', data.repositoryUrl);
-    formData.append('hostingUrl', data.hostedUrl); // Note: backend uses hostingUrl, frontend uses hostedUrl
-    formData.append('externalFiles', data.externalFiles);
-    formData.append('notes', data.note); // Note: backend uses notes, frontend uses note
-    
-    // Add each file individually
-    if (data.files && data.files.length > 0) {
-      data.files.forEach((file, index) => {
-        formData.append('images', file);
-      });
-    }
-    
-    // Log the FormData for debugging (this won't show the actual content)
-    console.log("Sending FormData:", formData);
-    
-    // Send with the correct content type (FormData sets it automatically)
-    const response = await axios.post(
-      "http://localhost:8000/submit-milestone", 
-      formData, 
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+  const handleMilestoneSubmit = async (data: MilestoneSubmissionData) => {
+    try {
+      console.log(data)
+      const response = await axios.post("http://localhost:8000"+"/submit-milestone",data)
+      console.log(response)
+      if (!response) {
+        throw new Error("Failed to submit milestone");
       }
-    );
-    
-    console.log(response);
-    
-    if (!response) {
-      throw new Error("Failed to submit milestone");
+
+      // Update the local state to reflect changes
+      setMilestones(prev => 
+        prev.map(milestone => 
+          milestone._id === data.milestoneId 
+            ? { ...milestone, status: "submitted" } 
+            : milestone
+        )
+      );
+
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error submitting milestone:", error);
     }
+  };
 
-    // Update the local state to reflect changes
-    setMilestones(prev => 
-      prev.map(milestone => 
-        milestone._id === milestoneId 
-          ? { ...milestone, status: "submitted" } 
-          : milestone
-      )
-    );
-
-    setIsModalOpen(false);
-  } catch (error) {
-    console.error("Error submitting milestone:", error);
+  if (loading) {
+    return <div className="p-8 text-center">Loading project data...</div>;
   }
-};
+
+  if (error) {
+    return <div className="p-8 text-center text-red-500">{error}</div>;
+  }
+
+  if (!project) {
+    return <div className="p-8 text-center">Project not found</div>;
+  }
 
   return (
     <div className="min-w-60 w-full max-w-[960px] overflow-hidden flex-1 shrink basis-[0%] max-md:max-w-full">
@@ -685,7 +663,7 @@ const handleMilestoneSubmit = async (data: MilestoneSubmitData, milestoneId: str
       <SubmitMilestoneModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={(data) => handleMilestoneSubmit(data, selectedMilestone?._id || '')}
+        onSubmit={handleMilestoneSubmit}
         milestoneId={selectedMilestoneId}
       />
     </div>
