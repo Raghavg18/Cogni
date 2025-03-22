@@ -1,30 +1,28 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Header from "@/components/layout/Header";
-import PageTitle from "@/components/jobs/PageTitle";
-import { Milestone } from "@/components/jobs/MilestoneTimeline";
-import { XCircle } from "lucide-react";
+import { XCircle, Wand2 } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
 const CreateJob: React.FC = () => {
   const router = useRouter();
-  const {isClient,username} = useAuth()
-  useEffect(()=>{
-    if(!isClient){
-      router.push('/freelancer-dashboard')
+  const { isClient, username } = useAuth();
+  
+  useEffect(() => {
+    if (!isClient) {
+      router.push('/freelancer-dashboard');
     }
-  },[])
+  }, [isClient, router]);
+  
   // Project details state
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
 
   // Milestones state
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
-
-  // Form visibility state
+  const [milestones, setMilestones] = useState([]);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // New milestone form state
   const [newMilestone, setNewMilestone] = useState({
@@ -37,11 +35,6 @@ const CreateJob: React.FC = () => {
   // Error state
   const [error, setError] = useState("");
 
-  const breadcrumbItems = [
-    { label: "Home", href: "/" },
-    { label: "All Jobs", href: "/jobs", active: true },
-  ];
-
   const handleCreateProject = async () => {
     if (milestones.length === 0) {
       setError("Please add at least one milestone before creating the project");
@@ -52,17 +45,25 @@ const CreateJob: React.FC = () => {
       return;
     }
     setError("");
-    const projectData = {
-      name: projectTitle,
-      description: projectDescription,
-      milestones: milestones,
-      clientId: username
-    };
-    const response = await axios.post(
-      "http://localhost:8000/create-project",
-      projectData,
-    );
-    router.push("/funding/" + response.data.projectId);
+    
+    try {
+      const projectData = {
+        name: projectTitle,
+        description: projectDescription,
+        milestones: milestones,
+        clientId: username
+      };
+      
+      const response = await axios.post(
+        "http://localhost:8000/create-project",
+        projectData,
+      );
+      
+      router.push("/funding/" + response.data.projectId);
+    } catch (err) {
+      setError("Failed to create project. Please try again.");
+      console.error("Error creating project:", err);
+    }
   };
 
   const handleAddMilestone = () => {
@@ -106,7 +107,7 @@ const CreateJob: React.FC = () => {
     });
 
     // Create a new milestone
-    const milestone: Milestone = {
+    const milestone = {
       title: newMilestone.title,
       description: newMilestone.description,
       date: formattedDate,
@@ -151,320 +152,311 @@ const CreateJob: React.FC = () => {
     setMilestones(updatedMilestones);
   };
 
-  // Enhanced Timeline Component
-  const EnhancedMilestoneTimeline: React.FC<{ milestones: Milestone[] }> = ({
-    milestones,
-  }) => {
-    return (
-      <div className="px-6 py-4">
-        {milestones.map((milestone, index) => (
-          <div key={index} className="relative ml-6 mb-6">
-            {/* Vertical line */}
-            {index < milestones.length - 1 && (
-              <div
-                className="absolute left-3 top-8 h-full w-0.5 bg-[rgba(229,232,235,1)]"
-                style={{ transform: "translateX(-50%)" }}
-              ></div>
-            )}
-
-            {/* Timeline node */}
-            <div className="absolute left-0 top-2 -ml-3 h-6 w-6 rounded-full bg-[rgba(79,115,150,1)] border-4 border-white flex items-center justify-center">
-              {milestone.completed ? (
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M10 3L4.5 8.5L2 6"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : null}
-            </div>
-
-            {/* Milestone content */}
-            <div className="flex justify-between items-start">
-              <div className="ml-6">
-                <div className="flex items-center">
-                  <h4 className="text-base font-semibold text-[rgba(13,20,28,1)]">
-                    {milestone.title}
-                  </h4>
-                  <button
-                    onClick={() => handleRemoveMilestone(index)}
-                    className="ml-2 text-[rgba(79,115,150,1)] hover:text-red-500"
-                  >
-                    <XCircle size={16} />
-                  </button>
-                </div>
-                <div className="text-sm text-[rgba(79,115,150,1)] mt-1">
-                  {milestone.date}
-                </div>
-                {milestone.description && (
-                  <div className="text-sm text-[rgba(79,115,150,1)] mt-1">
-                    {milestone.description}
-                  </div>
-                )}
-                {milestone.amount && (
-                  <div className="bg-[rgba(247,250,252,1)] text-[rgba(13,20,28,1)] text-sm font-medium px-3 py-1 rounded-full mt-2 inline-block">
-                    Amount: {milestone.amount}
-                  </div>
-                )}
-              </div>
-
-              <div className="mr-2">
-                {milestone.completed ? (
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">
-                    Completed
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-800">
-                    Pending
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+  const generateMilestones = async () => {
+    if (!projectTitle.trim() || !projectDescription.trim()) {
+      setError("Please enter both project title and description");
+      return;
+    }
+    
+    try {
+      setError("");
+      setIsGenerating(true);
+      
+      const response = await axios.post(
+        "http://localhost:8000/generate-milestones",
+        {
+          projectTitle,
+          projectDescription,
+        }
+      );
+      
+      if (response.data.success) {
+        // Convert API response to the format your app uses
+        const generatedMilestones = response.data.milestones.map((milestone: { title: any; description: any; formattedDate: any; amount: { toString: () => any; }; }, index: number, array: string | any[]) => ({
+          title: milestone.title,
+          description: milestone.description,
+          date: milestone.formattedDate,
+          amount: milestone.amount.toString(),
+          completed: false,
+          isLast: index === array.length - 1,
+        }));
+        
+        setMilestones(generatedMilestones);
+      } else {
+        setError("Failed to generate milestones: " + response.data.message);
+      }
+    } catch (error) {
+      console.error("Error generating milestones:", error);
+      setError("Error connecting to milestone generation service");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
-    <div className="bg-white">
-      <div className="bg-[rgba(247,250,252,1)] min-h-[800px] w-full overflow-hidden max-md:max-w-full">
-        <div className="w-full max-md:max-w-full">
-          <Header />
-          <main className="flex w-full justify-center flex-1 h-full px-4 md:px-8 lg:px-40 py-5 max-md:max-w-full">
-            <div className="flex min-w-60 w-full max-w-[960px] flex-col overflow-hidden items-stretch flex-1 shrink basis-[0%] max-md:max-w-full">
-              <div className="bg-white rounded-lg shadow-sm mt-6 p-3">
-                <nav className="flex p-4">
-                  <ol className="flex flex-wrap items-center gap-2 text-base">
-                    {breadcrumbItems.map((item, index) => (
-                      <React.Fragment key={index}>
-                        <li className="inline-flex items-center">
-                          <a
-                            href={item.href}
-                            className={`transition-colors ${
-                              item.active
-                                ? "text-[rgba(13,20,28,1)]"
-                                : "text-[rgba(79,115,150,1)] hover:text-foreground"
-                            }`}
-                          >
-                            {item.label}
-                          </a>
-                        </li>
-                        {index < breadcrumbItems.length - 1 && (
-                          <li
-                            role="presentation"
-                            aria-hidden="true"
-                            className="mx-1 text-[rgba(79,115,150,1)]"
-                          >
-                            /
-                          </li>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </ol>
-                </nav>
+    <div className="min-h-screen bg-[#f7f9fc]">
+      {/* Header Component would go here */}
+      <main className="max-w-7xl mx-auto p-8 md:p-12 lg:p-16">
+        <div className="mb-12">
+          <h1 className="font-bold text-[#0c141c] text-[32px] leading-10 mb-3">
+            Create a New Project
+          </h1>
+          <p className="text-[#4f7296] text-lg max-w-2xl">
+            Define your project details and set up milestones to track progress and payments
+          </p>
+        </div>
 
-                <PageTitle
-                  title="Create a job"
-                  actionLabel="Save"
-                  onAction={handleCreateProject}
+        <div className="bg-white rounded-2xl border border-[#e5e8ea] shadow-sm overflow-hidden">
+          {/* Project Details Section */}
+          <div className="p-6 border-b border-[#e5e8ea]">
+            <h2 className="font-semibold text-[#0c141c] text-xl mb-6">
+              Project Details
+            </h2>
+
+            <div className="space-y-6">
+              <div>
+                <label
+                  htmlFor="projectTitle"
+                  className="block text-sm font-medium text-[#0c141c] mb-2"
+                >
+                  Project Title
+                </label>
+                <input
+                  type="text"
+                  id="projectTitle"
+                  className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                  value={projectTitle}
+                  onChange={(e) => setProjectTitle(e.target.value)}
+                  placeholder="Enter a clear, descriptive title for your project"
                 />
+              </div>
 
-                {/* Project Details Section */}
-                <div className="px-6 py-4 border-b border-[rgba(229,232,235,1)]">
-                  <div className="mb-4">
+              <div>
+                <label
+                  htmlFor="projectDescription"
+                  className="block text-sm font-medium text-[#0c141c] mb-2"
+                >
+                  Project Description
+                </label>
+                <textarea
+                  id="projectDescription"
+                  className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                  rows={5}
+                  value={projectDescription}
+                  onChange={(e) => setProjectDescription(e.target.value)}
+                  placeholder="Describe the project scope, requirements, and expectations in detail..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Milestones Section */}
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
+              <h2 className="font-semibold text-[#0c141c] text-xl mb-4 sm:mb-0">
+                Project Milestones {milestones.length > 0 && `(${milestones.length})`}
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={generateMilestones}
+                  disabled={isGenerating || !projectTitle || !projectDescription}
+                  className={`flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium
+                    ${(!projectTitle || !projectDescription || isGenerating) 
+                    ? 'bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed' 
+                    : 'bg-[#e9f4ff] text-[#4f7296] hover:bg-[#d5e8ff]'}`}
+                >
+                  <Wand2 size={16} className="mr-2" />
+                  {isGenerating ? 'Generating...' : 'Auto-Generate'}
+                </button>
+                <button
+                  onClick={handleAddMilestone}
+                  className="flex items-center justify-center bg-[#4f7296] hover:bg-[#3c5a78] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+                >
+                  <span className="mr-2">+</span> Add Milestone
+                </button>
+              </div>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="text-red-600 mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
+                {error}
+              </div>
+            )}
+
+            {/* Milestone Form */}
+            {showMilestoneForm && (
+              <div className="bg-[#f7f9fc] p-6 rounded-lg mb-6 border border-[#e5e8ea]">
+                <h3 className="font-medium text-[#0c141c] text-lg mb-4">
+                  New Milestone
+                </h3>
+
+                <div className="space-y-4">
+                  <div>
                     <label
-                      htmlFor="projectTitle"
-                      className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                      htmlFor="milestoneTitle"
+                      className="block text-sm font-medium text-[#0c141c] mb-2"
                     >
-                      Project Title
+                      Title
                     </label>
                     <input
                       type="text"
-                      id="projectTitle"
-                      className="w-full p-2 border border-[rgba(229,232,235,1)] rounded-md focus:outline-none focus:ring-2 focus:ring-[rgba(79,115,150,1)]"
-                      value={projectTitle}
-                      onChange={(e) => setProjectTitle(e.target.value)}
-                      placeholder="Enter project title"
+                      id="milestoneTitle"
+                      name="title"
+                      className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                      value={newMilestone.title}
+                      onChange={handleMilestoneInputChange}
+                      placeholder="E.g., Initial Design, MVP Development"
                     />
                   </div>
 
-                  <div className="mb-2">
+                  <div>
                     <label
-                      htmlFor="projectDescription"
-                      className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
+                      htmlFor="milestoneDescription"
+                      className="block text-sm font-medium text-[#0c141c] mb-2"
                     >
-                      Project Description
+                      Description
                     </label>
                     <textarea
-                      id="projectDescription"
-                      className="w-full p-2 border border-[rgba(229,232,235,1)] rounded-md focus:outline-none focus:ring-2 focus:ring-[rgba(79,115,150,1)]"
-                      rows={4}
-                      value={projectDescription}
-                      onChange={(e) => setProjectDescription(e.target.value)}
-                      placeholder="Describe the project details..."
+                      id="milestoneDescription"
+                      name="description"
+                      className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                      rows={3}
+                      value={newMilestone.description}
+                      onChange={handleMilestoneInputChange}
+                      placeholder="Describe what will be delivered in this milestone"
                     />
                   </div>
-                </div>
 
-                {/* Milestones Section */}
-                <div className="px-6 py-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-bold text-[rgba(13,20,28,1)]">
-                      Milestones
-                    </h2>
-                    <button
-                      onClick={handleAddMilestone}
-                      className="flex items-center bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-4 py-2 rounded-md"
-                    >
-                      <span className="mr-1">+</span> Create Milestone
-                    </button>
-                  </div>
-
-                  {/* Error message */}
-                  {error && (
-                    <div className="text-red-600 mb-4 p-2 bg-red-50 rounded-md border border-red-200">
-                      {error}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="milestoneDate"
+                        className="block text-sm font-medium text-[#0c141c] mb-2"
+                      >
+                        Due Date
+                      </label>
+                      <input
+                        type="date"
+                        id="milestoneDate"
+                        name="date"
+                        className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                        value={newMilestone.date}
+                        onChange={handleMilestoneInputChange}
+                      />
                     </div>
-                  )}
 
-                  {/* Milestone Form Dropdown */}
-                  {showMilestoneForm && (
-                    <div className="bg-[rgba(247,250,252,1)] p-4 rounded-md mb-6 border border-[rgba(229,232,235,1)]">
-                      <h3 className="font-medium text-[rgba(13,20,28,1)] mb-3">
-                        New Milestone
-                      </h3>
-
-                      <div className="mb-3">
-                        <label
-                          htmlFor="milestoneTitle"
-                          className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
-                        >
-                          Title
-                        </label>
+                    <div>
+                      <label
+                        htmlFor="milestoneAmount"
+                        className="block text-sm font-medium text-[#0c141c] mb-2"
+                      >
+                        Payment Amount
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#4f7296]">$</span>
                         <input
                           type="text"
-                          id="milestoneTitle"
-                          name="title"
-                          className="w-full p-2 border border-[rgba(229,232,235,1)] rounded-md focus:outline-none focus:ring-2 focus:ring-[rgba(79,115,150,1)]"
-                          value={newMilestone.title}
+                          id="milestoneAmount"
+                          name="amount"
+                          className="w-full p-3 pl-8 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                          value={newMilestone.amount}
                           onChange={handleMilestoneInputChange}
-                          placeholder="Milestone title"
+                          placeholder="0.00"
                         />
                       </div>
-
-                      <div className="mb-3">
-                        <label
-                          htmlFor="milestoneDescription"
-                          className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
-                        >
-                          Description
-                        </label>
-                        <textarea
-                          id="milestoneDescription"
-                          name="description"
-                          className="w-full p-2 border border-[rgba(229,232,235,1)] rounded-md focus:outline-none focus:ring-2 focus:ring-[rgba(79,115,150,1)]"
-                          rows={2}
-                          value={newMilestone.description}
-                          onChange={handleMilestoneInputChange}
-                          placeholder="Milestone description"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <label
-                            htmlFor="milestoneDate"
-                            className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
-                          >
-                            Date
-                          </label>
-                          <input
-                            type="date"
-                            id="milestoneDate"
-                            name="date"
-                            className="w-full p-2 border border-[rgba(229,232,235,1)] rounded-md focus:outline-none focus:ring-2 focus:ring-[rgba(79,115,150,1)]"
-                            value={newMilestone.date}
-                            onChange={handleMilestoneInputChange}
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            htmlFor="milestoneAmount"
-                            className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-1"
-                          >
-                            Amount
-                          </label>
-                          <input
-                            type="text"
-                            id="milestoneAmount"
-                            name="amount"
-                            className="w-full p-2 border border-[rgba(229,232,235,1)] rounded-md focus:outline-none focus:ring-2 focus:ring-[rgba(79,115,150,1)]"
-                            value={newMilestone.amount}
-                            onChange={handleMilestoneInputChange}
-                            placeholder="$0.00"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => setShowMilestoneForm(false)}
-                          className="bg-[rgba(229,232,235,1)] hover:bg-[rgba(210,215,220,1)] text-[rgba(13,20,28,1)] px-4 py-2 rounded-md"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleCreateMilestone}
-                          className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-4 py-2 rounded-md"
-                        >
-                          Create
-                        </button>
-                      </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Timeline of Milestones */}
-                  {milestones.length > 0 ? (
-                    <div className="mb-6 border border-[rgba(229,232,235,1)] rounded-md">
-                      <EnhancedMilestoneTimeline milestones={milestones} />
-                    </div>
-                  ) : (
-                    <div className="text-[rgba(79,115,150,1)] italic mb-6 bg-[rgba(247,250,252,1)] p-4 rounded-md border border-[rgba(229,232,235,1)] text-center">
-                      No milestones added yet. Click &quot;Create
-                      Milestone&quot; to add one.
-                    </div>
-                  )}
-
-                  {/* Create Project Button */}
-                  <div className="mt-8 flex justify-center">
+                  <div className="flex justify-end gap-3 pt-2">
                     <button
-                      onClick={handleCreateProject}
-                      className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-8 py-3 rounded-md font-medium text-base"
-                      disabled={milestones.length === 0}
+                      onClick={() => setShowMilestoneForm(false)}
+                      className="px-4 py-2.5 rounded-lg text-[#4f7296] hover:bg-[#e5e8ea] transition-colors text-sm font-medium"
                     >
-                      Create Project
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCreateMilestone}
+                      className="px-4 py-2.5 rounded-lg bg-[#4f7296] hover:bg-[#3c5a78] text-white transition-colors text-sm font-medium"
+                    >
+                      Save Milestone
                     </button>
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Timeline of Milestones */}
+            {milestones.length > 0 ? (
+              <div className="border border-[#e5e8ea] rounded-lg overflow-hidden mb-8">
+                <div className="divide-y divide-[#e5e8ea]">
+                  {milestones.map((milestone, index) => (
+                    <div key={index} className="p-5 hover:bg-[#f7f9fc] transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 h-6 w-6 rounded-full bg-[#4f7296] flex items-center justify-center text-white text-xs">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-[#0c141c]">
+                                {milestone.title}
+                              </h4>
+                              <button
+                                onClick={() => handleRemoveMilestone(index)}
+                                className="text-[#8a9db0] hover:text-red-500 transition-colors"
+                                aria-label="Remove milestone"
+                              >
+                                <XCircle size={16} />
+                              </button>
+                            </div>
+                            <p className="text-sm text-[#4f7296] mt-1">
+                              {milestone.date}
+                            </p>
+                            {milestone.description && (
+                              <p className="text-sm text-[#4f7296] mt-2 max-w-3xl">
+                                {milestone.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="bg-[#f7f9fc] text-[#0c141c] text-sm font-medium px-4 py-2 rounded-full">
+                          ${parseFloat(milestone.amount).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-[#f7f9fc] rounded-lg border border-dashed border-[#e5e8ea] mb-8">
+                <p className="text-[#4f7296] mb-4">
+                  No milestones added yet. Break your project into manageable stages.
+                </p>
+                <p className="text-sm text-[#8a9db0] max-w-lg">
+                  For best results, define clear deliverables for each milestone with reasonable timeframes and payment amounts.
+                </p>
+              </div>
+            )}
+
+            {/* Create Project Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleCreateProject}
+                disabled={milestones.length === 0}
+                className={`px-8 py-3 rounded-lg font-medium text-base transition-colors
+                  ${milestones.length === 0 
+                  ? 'bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed' 
+                  : 'bg-[#4f7296] hover:bg-[#3c5a78] text-white'}`}
+              >
+                Create Project
+              </button>
             </div>
-          </main>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
 
 export default CreateJob;
-

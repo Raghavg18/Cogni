@@ -10,9 +10,11 @@ import Stripe from "stripe";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import multer from "multer";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import http from "http";
 import { Server } from "socket.io";
 import { Message } from "./models/message.model.js";
+
 
 const app = express();
 const PORT = 8000;
@@ -23,6 +25,7 @@ const saltRounds = 10;
 const stripe = Stripe(
   "sk_test_51R5086GdIuM6VO5RFKcFxEcaIYkuwOnqRGVAUzhTutX6sSNSvUlI9kKDvzKLqdZhqtxN40gLxdUirCs96h6SJ4k200EMU8yipT"
 );
+const genAI = new GoogleGenerativeAI("AIzaSyC7SAkw_PDHTdnahWu0mnId8DZzIVIyhkg");
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -784,6 +787,138 @@ app.get("/freelancer-projects/:freelancerId", async (req, res) => {
       success: false,
       message: "Server error",
       error: error.message,
+    });
+  }
+});
+
+// Add this new route to your Express app
+app.post("/generate-milestones", async (req, res) => {
+  try {
+    const { projectTitle, projectDescription, budget, timeframe } = req.body;
+    
+    if (!projectDescription) {
+      return res.status(400).json({
+        success: false,
+        message: "Project description is required"
+      });
+    }
+
+    // Create the prompt for Gemini
+    const prompt = `
+      As an experienced project manager, analyze this project and break it down into logical milestones.
+      
+      Project Title: ${projectTitle || "Untitled Project"}
+      Project Description: ${projectDescription}
+      ${budget ? `Total Budget: $${budget}` : ""}
+      ${timeframe ? `Expected Timeframe: ${timeframe}` : ""}
+      
+      Create 3-6 milestone tasks that would allow this project to be completed efficiently.
+      For each milestone, provide:
+      1. A clear title
+      2. A brief description of what should be delivered
+      3. A reasonable estimated completion date (relative to project start, e.g., "+2 weeks")
+      4. An appropriate portion of the total budget
+      
+      Format your response as a valid JSON array with objects containing these fields:
+      [
+        {
+          "title": "Milestone 1 Title",
+          "description": "Detailed description of deliverables",
+          "timeEstimate": "+X weeks", 
+          "amount": dollar amount (numeric, no $ symbol)
+        },
+        ...
+      ]
+    `;
+
+    // Generate content with Gemini API using fetch
+    const GEMINI_API_KEY = 'AIzaSyC7SAkw_PDHTdnahWu0mnId8DZzIVIyhkg'; // Get from environment variables
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates[0].content.parts[0].text;
+    
+    // Parse the response to get valid JSON
+    // Find JSON content between square brackets
+    const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    
+    if (!jsonMatch) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate properly formatted milestones",
+        rawResponse: text
+      });
+    }
+    
+    const milestones = JSON.parse(jsonMatch[0]);
+    
+    // Calculate dates based on relative timeframes
+    const startDate = new Date();
+    const processedMilestones = milestones.map(milestone => {
+      // Process the timeEstimate (e.g., "+2 weeks")
+      let dueDate = new Date(startDate);
+      const timeEstimate = milestone.timeEstimate;
+      
+      if (timeEstimate) {
+        const match = timeEstimate.match(/\+(\d+)\s+(day|days|week|weeks|month|months)/i);
+        if (match) {
+          const amount = parseInt(match[1]);
+          const unit = match[2].toLowerCase();
+          
+          if (unit.startsWith('day')) {
+            dueDate.setDate(dueDate.getDate() + amount);
+          } else if (unit.startsWith('week')) {
+            dueDate.setDate(dueDate.getDate() + (amount * 7));
+          } else if (unit.startsWith('month')) {
+            dueDate.setMonth(dueDate.getMonth() + amount);
+          }
+        }
+      }
+      
+      return {
+        ...milestone,
+        date: dueDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+        formattedDate: dueDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      };
+    });
+    
+    // Calculate total budget
+    const totalAmount = processedMilestones.reduce((sum, milestone) => sum + (parseFloat(milestone.amount) || 0), 0);
+    
+    res.json({
+      success: true,
+      milestones: processedMilestones,
+      totalAmount
+    });
+    
+  } catch (error) {
+    console.error("Error generating milestones:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate milestones",
+      error: error.message
     });
   }
 });

@@ -8,6 +8,7 @@ import {
   Plus,
   ExternalLink,
   Github,
+  File,
 } from "lucide-react";
 import {
   Dialog,
@@ -36,6 +37,10 @@ interface StatusProps {
   showRelease: boolean;
 }
 interface Milestone {
+  images: any;
+  repositoryUrl: any;
+  externalFiles: JSX.Element;
+  hostingUrl: JSX.Element;
   _id: string;
   description: string;
   date: string;
@@ -291,119 +296,199 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       </div>
 
       {/* Details Dialog */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Milestone Details</DialogTitle>
-            <DialogDescription>
-              {selectedMilestone?.status === "submitted"
-                ? "Review the milestone submission before releasing payment."
-                : "View milestone information."}
-            </DialogDescription>
-          </DialogHeader>
+      {/* Details Dialog with Improved Scrolling and Image Handling */}
+<Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <DialogHeader className="sticky top-0 bg-white z-10 pb-2">
+      <DialogTitle className="text-xl">
+        {selectedMilestone?.description || "Milestone Details"}
+      </DialogTitle>
+      <DialogDescription>
+        {selectedMilestone?.status === "submitted"
+          ? "Review the milestone submission before releasing payment."
+          : "View milestone information."}
+      </DialogDescription>
+    </DialogHeader>
 
-          {selectedMilestone && (
-            <div className="mt-4 space-y-4">
-              <div>
-                <h3 className="font-medium text-lg">
-                  {selectedMilestone.description}
-                </h3>
-                <p className="text-gray-600">
-                  Status:{" "}
-                  <span className="font-medium capitalize">
-                    {selectedMilestone.status}
-                  </span>
-                </p>
-                <p className="text-gray-600">
-                  Amount:{" "}
-                  <span className="font-medium">
-                    ${selectedMilestone.amount}
-                  </span>
-                </p>
-              </div>
+    {selectedMilestone && (
+      <div className="mt-4 space-y-5">
+        {/* Status and Payment Info */}
+        <div className="flex flex-wrap gap-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center">
+            <span className="text-gray-600 font-medium mr-2">Status:</span>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              selectedMilestone.status === 'paid' ? 'bg-green-100 text-green-800' :
+              selectedMilestone.status === 'submitted' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {selectedMilestone.status.toUpperCase()}
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-gray-600 font-medium mr-2">Amount:</span>
+            <span className="text-lg font-bold">${selectedMilestone.amount}</span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-gray-600 font-medium mr-2">Due Date:</span>
+            <span>
+              {selectedMilestone.date
+                ? new Date(selectedMilestone.date).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Not specified"}
+            </span>
+          </div>
+        </div>
 
-              {/* Display GitHub URL if available */}
-              {selectedMilestone.githubUrl && (
-                <div className="pt-2">
-                  <h4 className="font-medium mb-2">GitHub Repository</h4>
-                  <a
-                    href={selectedMilestone.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-blue-600 hover:text-blue-800"
-                  >
-                    <Github size={16} className="mr-1" />
-                    {selectedMilestone.githubUrl}
-                    <ExternalLink size={14} className="ml-1" />
-                  </a>
-                </div>
-              )}
-
-              {/* Display Screenshots if available */}
-              {selectedMilestone.screenshots &&
-                selectedMilestone.screenshots.length > 0 && (
-                  <div className="pt-2">
-                    <h4 className="font-medium mb-2">Screenshots</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {selectedMilestone.screenshots.map((screenshot, idx) => (
-                        <div
-                          key={idx}
-                          className="border rounded overflow-hidden"
-                        >
-                          <img
-                            src={screenshot}
-                            alt={`Screenshot ${idx + 1}`}
-                            className="w-full h-auto object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {/* Display submission notes if available */}
-              {selectedMilestone.notes && (
-                <div className="pt-2">
-                  <h4 className="font-medium mb-2">Notes</h4>
-                  <p className="text-gray-700 whitespace-pre-line">
-                    {selectedMilestone.notes}
-                  </p>
-                </div>
-              )}
-              {/* Success message */}
-              {releaseSuccess && (
-                <div className="bg-green-50 text-green-700 p-3 rounded border border-green-200 flex items-center">
-                  <CheckCircle size={16} className="mr-2" />
-                  Payment successfully released! Redirecting...
-                </div>
-              )}
-
-              {/* Error message */}
-              {error && (
-                <div className="bg-red-50 text-red-700 p-3 rounded border border-red-200">
-                  <p>{error}</p>
-                </div>
+        {/* Links Section */}
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2 border-b">
+            <h4 className="font-medium">Project Links</h4>
+          </div>
+          <div className="p-4 grid gap-3">
+            {/* GitHub Repository */}
+            <div className="flex items-center">
+              <Github size={18} className="mr-2 text-gray-600" />
+              {selectedMilestone.repositoryUrl ? (
+                <a
+                  href={selectedMilestone.repositoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  View GitHub Repository
+                  <ExternalLink size={14} className="ml-1" />
+                </a>
+              ) : (
+                <span className="text-gray-500 italic">No GitHub repository provided</span>
               )}
             </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsOpen(false)} disabled={processingAction}>
-              Close
-            </Button>
-
-            {selectedMilestone && selectedMilestone.status === "submitted" && (
-              <Button
-                onClick={() => handleRelease(selectedMilestone._id)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isReleasing || releaseSuccess || processingAction}
-              >
-                {isReleasing ? "Processing..." : "Release Payment"}
-              </Button>
+            
+            {/* Hosting URL */}
+            {selectedMilestone.hostingUrl && (
+              <div className="flex items-center">
+                <ExternalLink size={18} className="mr-2 text-gray-600" />
+                <a
+                  href={selectedMilestone.hostingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  View Live Demo
+                  <ExternalLink size={14} className="ml-1" />
+                </a>
+              </div>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            
+            {/* External Files */}
+            {selectedMilestone.externalFiles && (
+              <div className="flex items-center">
+                <File size={18} className="mr-2 text-gray-600" />
+                <a
+                  href={selectedMilestone.externalFiles || ''}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  View External Files
+                  <ExternalLink size={14} className="ml-1" />
+                </a>
+              </div>
+            )}
+            
+            {/* Show message if no links are available */}
+            {!selectedMilestone.repositoryUrl && !selectedMilestone.hostingUrl && !selectedMilestone.externalFiles && (
+              <p className="text-gray-500 italic">No project links available</p>
+            )}
+          </div>
+        </div>
+
+        {/* Display Screenshots with improved handling */}
+        {selectedMilestone.images && selectedMilestone.images.length > 0 && (
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b">
+              <h4 className="font-medium">Screenshots ({selectedMilestone.images.length})</h4>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedMilestone.images.map((screenshot: string | URL | undefined, idx: React.Key | null | undefined) => (
+                  <div key={idx} className="group relative border rounded-lg overflow-hidden shadow-sm bg-white">
+                    {/* Image container with fixed height and proper handling */}
+                    <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                      <img
+                        src={screenshot}
+                        alt={`Screenshot ${idx + 1}`}
+                        className="w-full h-full object-contain max-h-48"
+                        loading="lazy"
+                        onClick={() => window.open(screenshot, '_blank')}
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all duration-200">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 bg-white shadow-md"
+                        onClick={() => window.open(screenshot, '_blank')}
+                      >
+                        <ExternalLink size={14} className="mr-1" />
+                        View Full Size
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Display submission notes if available */}
+        {selectedMilestone.notes && (
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b">
+              <h4 className="font-medium">Notes</h4>
+            </div>
+            <div className="p-4">
+              <p className="text-gray-700 whitespace-pre-line max-h-48 overflow-y-auto">{selectedMilestone.notes}</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Success message */}
+        {releaseSuccess && (
+          <div className="bg-green-50 text-green-700 p-3 rounded border border-green-200 flex items-center">
+            <CheckCircle size={16} className="mr-2" />
+            Payment successfully released! Redirecting...
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded border border-red-200">
+            <p>{error}</p>
+          </div>
+        )}
+      </div>
+    )}
+
+    <DialogFooter className="sticky bottom-0 bg-white pt-2 z-10 mt-4">
+      <Button variant="outline" onClick={() => setDetailsOpen(false)} disabled={processingAction}>
+        Close
+      </Button>
+
+      {selectedMilestone && selectedMilestone.status === "submitted" && (
+        <Button
+          onClick={() => handleRelease(selectedMilestone._id)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={isReleasing || releaseSuccess || processingAction}
+        >
+          {isReleasing ? "Processing..." : "Release Payment"}
+        </Button>
+      )}
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </div>
   );
 };
