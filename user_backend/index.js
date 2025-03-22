@@ -37,9 +37,9 @@ app.use(
 );
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: 'dyxsai3xf',
+  api_key: '999174425217381',
+  api_secret: 'XUbcCldIRmIFUj7xakQQEUT1HMI'
 });
 
 const storage = new CloudinaryStorage({
