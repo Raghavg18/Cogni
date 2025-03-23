@@ -49,7 +49,7 @@ const MilestonePage = () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:8000/project/${params.projectId}`
+          `https://cogni-production.up.railway.app/project/${params.projectId}`
         );
 
         if (response.data) {

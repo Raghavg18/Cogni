@@ -44,7 +44,7 @@ const Page = () => {
       try {
         setLoading(true);
         console.log(username)
-        const response = await axios.get(`http://localhost:8000/client-projects/${username}`,{withCredentials: true})
+        const response = await axios.get(`https://cogni-production.up.railway.app/client-projects/${username}`,{withCredentials: true})
         
         // The main error: response data is already parsed by axios
         // No need to call response.json()

@@ -114,7 +114,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       setError(null);
 
       const response = await axios.post(
-        "http://localhost:8000/release-payment",
+        "https://cogni-production.up.railway.app/release-payment",
         {
           milestoneId: milestoneId,
         }

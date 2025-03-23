@@ -179,7 +179,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:8000/project/${projectId}`
+          `https://cogni-production.up.railway.app/project/${projectId}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch project data");
@@ -273,7 +273,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
 
       // Make the API call
       const response = await axios.post(
-        "http://localhost:8000/submit-milestone",
+        "https://cogni-production.up.railway.app/submit-milestone",
         formData,
         {
           headers: {

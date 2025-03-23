@@ -64,7 +64,7 @@ const CreateJob: React.FC = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:8000/create-project",
+        "https://cogni-production.up.railway.app/create-project",
         projectData
       );
 
@@ -172,7 +172,7 @@ const CreateJob: React.FC = () => {
       setIsGenerating(true);
 
       const response = await axios.post(
-        "http://localhost:8000/generate-milestones",
+        "https://cogni-production.up.railway.app/generate-milestones",
         {
           projectTitle,
           projectDescription,

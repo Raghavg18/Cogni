@@ -51,7 +51,7 @@ const Header: React.FC = () => {
           <div className="flex min-h-4 w-4 flex-1" />
         </div>
         <div className="self-stretch text-lg text-[rgba(13,20,28,1)] font-bold leading-none my-auto">
-          Cognii
+          Fiverr
         </div>
       </div>
       <div className="self-stretch flex min-w-60 gap-8 flex-wrap flex-1 shrink basis-[0%] my-auto max-md:max-w-full ml-auto">

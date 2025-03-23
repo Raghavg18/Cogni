@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send, Search } from "lucide-react";
 
-const socket = io("http://localhost:8000");
+const socket = io("https://cogni-production.up.railway.app");
 
 interface Message {
   id?: number;
@@ -59,7 +59,7 @@ export default function Chat() {
   useEffect(() => {
     if (!selectedUser) return;
 
-    fetch(`http://localhost:8000/${currentUser}/${selectedUser.id}`)
+    fetch(`https://cogni-production.up.railway.app/${currentUser}/${selectedUser.id}`)
       .then((res) => res.json())
       .then((data) => {
         console.log(data);

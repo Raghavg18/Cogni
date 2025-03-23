@@ -29,7 +29,7 @@ const Page = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/signup", {
+      const response = await fetch("https://cogni-production.up.railway.app/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,7 +68,7 @@ const Page = () => {
     <div className="grid grid-cols-[1fr_1fr] gap-48">
       <div className="h-screen pl-8 py-8">
         <Panel
-          heading="Welcome to Fiverr"
+          heading="Welcome to Cognii"
           brief="Your Gateway to hassle free Freelancing"
           heading2="Seamless Payments"
           brief2="Effortlessly work together without worrying about the payments"

@@ -39,7 +39,7 @@ export default function FreelancerDashboard() {
         // Get the username from localStorage or context
         const username = localStorage.getItem("username") || "defaultFreelancerUsername";
 
-        const response = await fetch(`http://localhost:8000/freelancer-projects/${username}`, {
+        const response = await fetch(`https://cogni-production.up.railway.app/freelancer-projects/${username}`, {
           method: "GET",
           credentials: "include", // Important for cookies
           headers: {

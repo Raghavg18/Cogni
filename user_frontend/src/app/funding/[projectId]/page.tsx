@@ -66,7 +66,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       }
 
       // Fund the escrow
-      const response = await axios.post("http://localhost:8000/fund-escrow", {
+      const response = await axios.post("https://cogni-production.up.railway.app/fund-escrow", {
         projectId,
         amount: totalAmount,
         paymentMethodId: paymentMethod.id,
@@ -162,7 +162,7 @@ const SelectFreelancer = () => {
     const fetchProjectDetails = async (projectId: string) => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/project/${projectId}`
+          `https://cogni-production.up.railway.app/project/${projectId}`
         );
         setProjectData(response.data);
 
@@ -195,7 +195,7 @@ const SelectFreelancer = () => {
   const fetchFreelancers = async () => {
     try {
       // This endpoint would need to be implemented on your backend
-      const response = await axios.get("http://localhost:8000/freelancers");
+      const response = await axios.get("https://cogni-production.up.railway.app/freelancers");
       setFreelancers(response.data);
       setIsLoading(false);
     } catch (err) {
@@ -240,7 +240,7 @@ const SelectFreelancer = () => {
     try {
       if (projectData && selectedFreelancer) {
         await axios.put(
-          `http://localhost:8000/project/${projectData.project._id}/assign-freelancer`,
+          `https://cogni-production.up.railway.app/project/${projectData.project._id}/assign-freelancer`,
           {
             freelancerId: selectedFreelancer._id,
           }

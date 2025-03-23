@@ -76,7 +76,7 @@ const Page = () => {
     <div className="grid grid-cols-[1fr_1fr] gap-48">
       <div className="h-screen pl-8 py-8">
         <Panel
-          heading="Welcome to Cognii"
+          heading="Welcome to Fiverr"
           brief="Your Gateway to hassle free Freelancing"
           heading2="Seamless Payments"
           brief2="Effortlessly work together without worrying about the payments"

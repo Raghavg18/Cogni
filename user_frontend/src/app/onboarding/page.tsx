@@ -31,7 +31,7 @@ const StripeOnboardingPage = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8000/check-stripe-status/${user}`
+        `https://cogni-production.up.railway.app/check-stripe-status/${user}`
       );
 
       if (response.data.success) {
@@ -58,7 +58,7 @@ const StripeOnboardingPage = () => {
       setSuccess("");
 
       const response = await axios.post(
-        "http://localhost:8000/connect-stripe",
+        "https://cogni-production.up.railway.app/connect-stripe",
         {
           username: username,
         }
