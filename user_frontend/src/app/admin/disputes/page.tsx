@@ -26,7 +26,7 @@ export default function DisputesPage() {
         );
         const data = await response.json();
         setDisputes(data);
-      } catch (err) {
+      } catch {
         setError("Failed to fetch disputes");
       } finally {
         setLoading(false);
@@ -49,7 +49,14 @@ export default function DisputesPage() {
     }
   };
 
-  const filteredDisputes = disputes.filter((dispute: any) =>
+  interface Dispute {
+    _id: string;
+    disputeTitle: string;
+    disputeAmount: number;
+    status: string;
+  }
+
+  const filteredDisputes = disputes.filter((dispute: Dispute) =>
     dispute.disputeTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -83,8 +90,7 @@ export default function DisputesPage() {
               <select
                 className="appearance-none w-[130px] h-9 pl-9 pr-3 rounded-lg border border-[#e5e8ea] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#7825ff] cursor-pointer text-[#0c141c]"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
+                onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="accepted">Accepted</option>
@@ -102,7 +108,7 @@ export default function DisputesPage() {
           <p className="text-center text-red-500">{error}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredDisputes.map((dispute: any) => (
+            {filteredDisputes.map((dispute: Dispute) => (
               <Card
                 key={dispute._id}
                 className="cursor-pointer hover:shadow-sm transition-all duration-200 border-t-[3px]"
@@ -114,8 +120,7 @@ export default function DisputesPage() {
                       ? "#beffbe"
                       : "#ffd4d4",
                 }}
-                onClick={() => router.push(`/admin/disputes/${dispute._id}`)}
-              >
+                onClick={() => router.push(`/admin/disputes/${dispute._id}`)}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium text-[#0c141c] text-base line-clamp-2">
@@ -124,8 +129,7 @@ export default function DisputesPage() {
                     <Badge
                       className={`text-xs font-medium ${getStatusBadgeStyles(
                         dispute.status
-                      )}`}
-                    >
+                      )}`}>
                       {dispute.status}
                     </Badge>
                   </div>

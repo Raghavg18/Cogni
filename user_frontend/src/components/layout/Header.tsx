@@ -2,32 +2,35 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 
 const Header: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
-  const {username,isClient} = useAuth()
-  const [role,setRole] = useState("")
+  const { username, isClient } = useAuth();
+  const [role, setRole] = useState("");
 
   useEffect(() => {
-    setRole(isClient?"client":"freelancer")
+    setRole(isClient ? "client" : "freelancer");
   }, [isClient]);
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("https://cogni-production.up.railway.app/logout", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        "https://cogni-production.up.railway.app/logout",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         // Clear local storage
         localStorage.removeItem("username");
-        localStorage.removeItem("isClient")
+        localStorage.removeItem("isClient");
         router.push("/login");
       }
     } catch (error) {
@@ -56,7 +59,13 @@ const Header: React.FC = () => {
       </div>
       <div className="self-stretch flex min-w-60 gap-8 flex-wrap flex-1 shrink basis-[0%] my-auto max-md:max-w-full ml-auto">
         <div className="flex min-w-60 min-h-10 items-center gap-9 text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap ml-auto">
-          <Link href={role === "freelancer" ? "/freelancer-dashboard" : "/client-dashboard/milestone-tracker"} className="self-stretch my-auto">
+          <Link
+            href={
+              role === "freelancer"
+                ? "/freelancer-dashboard"
+                : "/client-dashboard/milestone-tracker"
+            }
+            className="self-stretch my-auto">
             Dashboard
           </Link>
           <Link href="/chat" className="self-stretch my-auto">
@@ -84,28 +93,31 @@ const Header: React.FC = () => {
           </button>
         </div>
         <div className="relative">
-          <button 
+          <button
             onClick={toggleUserMenu}
-            className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white font-semibold rounded-full"
-          >
+            className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white font-semibold rounded-full">
             {getInitial()}
           </button>
-          
+
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
               <div className="px-4 py-2 border-b border-gray-200">
                 <p className="text-sm font-medium text-gray-900">{username}</p>
                 <p className="text-xs text-gray-500 capitalize">{role}</p>
               </div>
-              <Link href={role === "freelancer" ? "/freelancer-dashboard" : "/client-dashboard/milestone-tracker"}>
+              <Link
+                href={
+                  role === "freelancer"
+                    ? "/freelancer-dashboard"
+                    : "/client-dashboard/milestone-tracker"
+                }>
                 <div className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
                   Dashboard
                 </div>
               </Link>
-              <div 
+              <div
                 onClick={handleLogout}
-                className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 cursor-pointer"
-              >
+                className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 cursor-pointer">
                 Logout
               </div>
             </div>

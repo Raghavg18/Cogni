@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { Be_Vietnam_Pro } from "next/font/google";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "@/components/context/AuthContext";
 
 const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin"],
@@ -23,9 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={beVietnamPro.className}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

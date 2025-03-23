@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, X, Link, Upload, Calendar, Github } from "lucide-react";
+import { FileText, X, Calendar, Github } from "lucide-react";
 
 interface RaiseDisputeModalProps {
   isOpen: boolean;

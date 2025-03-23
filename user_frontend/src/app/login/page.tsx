@@ -4,7 +4,7 @@ import Logo from "@/components/LoginSignup/Logo";
 import Form from "@/components/LoginSignup/Form";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext"; // Import the auth hook
+import { useAuth } from "@/components/context/AuthContext"; // Import the auth hook
 
 const Page = () => {
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ const Page = () => {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("pass") as string;
-    
+
     if (!email || !password) {
       setError("Email and password are required");
       setLoading(false);
@@ -28,31 +28,34 @@ const Page = () => {
     }
 
     try {
-      const response = await fetch("https://cogni-production.up.railway.app/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: email, // Using email as username based on your form
-          password: password
-        }),
-        credentials: "include",
-      });
+      const response = await fetch(
+        "https://cogni-production.up.railway.app/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: email, // Using email as username based on your form
+            password: password,
+          }),
+          credentials: "include",
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
-      console.log(data)
+      console.log(data);
       // Get the user role from the response data
       const userRole = data.role; // Assuming your API returns the role
       const isClient = userRole === "client";
 
       // Store user info in the global context
-      setAuth(email, isClient); 
-      
+      setAuth(email, isClient);
+
       // Redirect based on user role
       if (userRole === "freelancer") {
         router.push("/onboarding");
@@ -85,21 +88,11 @@ const Page = () => {
       <div className="pt-44 pb-11 pr-28 pl-14">
         <Logo />
         <div className="flex flex-col gap-6">
-          {error && (
-            <div className="text-red-500 text-sm">
-              {error}
-            </div>
-          )}
+          {error && <div className="text-red-500 text-sm">{error}</div>}
           {loading && (
-            <div className="text-blue-500 text-sm">
-              Logging in...
-            </div>
+            <div className="text-blue-500 text-sm">Logging in...</div>
           )}
-          <Form
-            signup={false}
-            redirectTo="/signup"
-            onSubmit={handleLogin}
-          />
+          <Form signup={false} redirectTo="/signup" onSubmit={handleLogin} />
         </div>
       </div>
     </div>

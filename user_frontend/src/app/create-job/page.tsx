@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { XCircle, Wand2, Plus, Calendar, DollarSign } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 import Header from "@/components/layout/Header";
 
 const CreateJob: React.FC = () => {
@@ -219,8 +219,10 @@ const CreateJob: React.FC = () => {
       <Header />
       <div className="w-full max-w-3xl mx-auto px-4 py-5">
         <div className="bg-white rounded-2xl shadow-md overflow-hidden p-8">
-          <h1 className="font-bold text-2xl text-center mb-8">Create a New Project</h1>
-          
+          <h1 className="font-bold text-2xl text-center mb-8">
+            Create a New Project
+          </h1>
+
           {error && (
             <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200 text-red-600 text-sm">
               {error}
@@ -230,10 +232,12 @@ const CreateJob: React.FC = () => {
           {/* Project Details Section */}
           <div className="mb-8">
             <h2 className="font-medium text-lg mb-4">Project Details</h2>
-            
+
             <div className="flex flex-col gap-6">
               <div>
-                <label htmlFor="projectTitle" className="block mb-2 text-sm">Project Title</label>
+                <label htmlFor="projectTitle" className="block mb-2 text-sm">
+                  Project Title
+                </label>
                 <input
                   type="text"
                   id="projectTitle"
@@ -245,7 +249,11 @@ const CreateJob: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="projectDescription" className="block mb-2 text-sm">Project Description</label>
+                <label
+                  htmlFor="projectDescription"
+                  className="block mb-2 text-sm">
+                  Project Description
+                </label>
                 <textarea
                   id="projectDescription"
                   className="w-full border border-[#465FF166] rounded-lg p-4 focus:outline-none focus:border-2 focus:border-[#7925FF]"
@@ -265,16 +273,20 @@ const CreateJob: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-medium text-lg">
-                Project Milestones {milestones.length > 0 && `(${milestones.length})`}
+                Project Milestones{" "}
+                {milestones.length > 0 && `(${milestones.length})`}
               </h2>
               <div className="flex gap-3">
                 <button
                   onClick={generateMilestones}
-                  disabled={isGenerating || !projectTitle || !projectDescription}
+                  disabled={
+                    isGenerating || !projectTitle || !projectDescription
+                  }
                   className={`flex items-center justify-center rounded-lg px-4 py-2 text-sm
-                    ${!projectTitle || !projectDescription || isGenerating
-                      ? "bg-[#E1E1E4] text-[#9C9AA5] cursor-not-allowed"
-                      : "bg-[#D1D7FB] text-[#465FF1] hover:bg-[#B9C3F8]"
+                    ${
+                      !projectTitle || !projectDescription || isGenerating
+                        ? "bg-[#E1E1E4] text-[#9C9AA5] cursor-not-allowed"
+                        : "bg-[#D1D7FB] text-[#465FF1] hover:bg-[#B9C3F8]"
                     }`}>
                   <Wand2 size={16} className="mr-2" />
                   {isGenerating ? "Generating..." : "Auto-Generate"}
@@ -295,7 +307,9 @@ const CreateJob: React.FC = () => {
 
                 <div className="flex flex-col gap-6">
                   <div>
-                    <label htmlFor="milestoneTitle" className="block mb-2 text-sm">
+                    <label
+                      htmlFor="milestoneTitle"
+                      className="block mb-2 text-sm">
                       Title
                     </label>
                     <input
@@ -310,7 +324,9 @@ const CreateJob: React.FC = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="milestoneDescription" className="block mb-2 text-sm">
+                    <label
+                      htmlFor="milestoneDescription"
+                      className="block mb-2 text-sm">
                       Description
                     </label>
                     <textarea
@@ -326,11 +342,16 @@ const CreateJob: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="milestoneDate" className="block mb-2 text-sm">
+                      <label
+                        htmlFor="milestoneDate"
+                        className="block mb-2 text-sm">
                         Due Date
                       </label>
                       <div className="relative">
-                        <Calendar size={16} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#9C9AA5]" />
+                        <Calendar
+                          size={16}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#9C9AA5]"
+                        />
                         <input
                           type="date"
                           id="milestoneDate"
@@ -343,11 +364,16 @@ const CreateJob: React.FC = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="milestoneAmount" className="block mb-2 text-sm">
+                      <label
+                        htmlFor="milestoneAmount"
+                        className="block mb-2 text-sm">
                         Payment Amount
                       </label>
                       <div className="relative">
-                        <DollarSign size={16} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#9C9AA5]" />
+                        <DollarSign
+                          size={16}
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#9C9AA5]"
+                        />
                         <input
                           type="text"
                           id="milestoneAmount"
@@ -384,8 +410,7 @@ const CreateJob: React.FC = () => {
                   {milestones.map((milestone, index) => (
                     <div
                       key={index}
-                      className="p-5 hover:bg-[#F5F5F7] transition-colors"
-                    >
+                      className="p-5 hover:bg-[#F5F5F7] transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4">
                           <div className="mt-1 h-6 w-6 rounded-full bg-[#7925FF] flex items-center justify-center text-white text-xs">
@@ -393,14 +418,11 @@ const CreateJob: React.FC = () => {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-medium">
-                                {milestone.title}
-                              </h4>
+                              <h4 className="font-medium">{milestone.title}</h4>
                               <button
                                 onClick={() => handleRemoveMilestone(index)}
                                 className="text-[#9C9AA5] hover:text-red-500 transition-colors"
-                                aria-label="Remove milestone"
-                              >
+                                aria-label="Remove milestone">
                                 <XCircle size={16} />
                               </button>
                             </div>
@@ -424,11 +446,10 @@ const CreateJob: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-[#F5F5F7] rounded-lg border border-dashed border-[#E1E1E4] mb-8">
-                <p className="text-[#9C9AA5] mb-3">
-                  No milestones added yet
-                </p>
+                <p className="text-[#9C9AA5] mb-3">No milestones added yet</p>
                 <p className="text-sm text-[#9C9AA5] max-w-lg">
-                  Break your project into stages with clear deliverables, timeframes, and payment amounts
+                  Break your project into stages with clear deliverables,
+                  timeframes, and payment amounts
                 </p>
               </div>
             )}
@@ -439,11 +460,11 @@ const CreateJob: React.FC = () => {
                 onClick={handleCreateProject}
                 disabled={milestones.length === 0}
                 className={`w-full rounded-lg font-bold py-3.5 transition-colors
-                  ${milestones.length === 0
-                    ? "bg-[#E1E1E4] text-[#9C9AA5] cursor-not-allowed"
-                    : "bg-[#7925FF] hover:bg-[#6817E2] text-white"
-                  }`}
-              >
+                  ${
+                    milestones.length === 0
+                      ? "bg-[#E1E1E4] text-[#9C9AA5] cursor-not-allowed"
+                      : "bg-[#7925FF] hover:bg-[#6817E2] text-white"
+                  }`}>
                 Create Project
               </button>
             </div>

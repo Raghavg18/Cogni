@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 import { Check } from "lucide-react";
 
 const StripeOnboardingPage = () => {
@@ -142,7 +142,9 @@ const StripeOnboardingPage = () => {
               <h3 className="font-medium text-gray-900 mb-2">Account Status</h3>
               <div className="flex items-center mb-2">
                 <span className="mr-2 font-medium text-sm">Account ID:</span>
-                <span className="text-gray-600 text-sm truncate max-w-[200px]">{stripeStatus.accountId}</span>
+                <span className="text-gray-600 text-sm truncate max-w-[200px]">
+                  {stripeStatus.accountId}
+                </span>
               </div>
               <div className="flex items-center">
                 <span className="mr-2 font-medium text-sm">Status:</span>
@@ -190,7 +192,9 @@ const StripeOnboardingPage = () => {
                   : "bg-[#7925FF] hover:bg-[#6315e0] transition-colors"
               }`}>
               {loading ? "Processing..." : buttonState.text}
-              {stripeStatus?.transfersEnabled && <Check className="ml-2 inline h-5 w-5" />}
+              {stripeStatus?.transfersEnabled && (
+                <Check className="ml-2 inline h-5 w-5" />
+              )}
             </button>
 
             {stripeStatus?.transfersEnabled && (
@@ -214,23 +218,31 @@ const StripeOnboardingPage = () => {
             <ul className="space-y-2">
               <li className="flex items-start gap-2.5">
                 <Check className="text-[#7925FF] h-5 w-5 mt-0.5" />
-                <p className="text-sm text-gray-700">Securely receive payments directly to your bank account</p>
+                <p className="text-sm text-gray-700">
+                  Securely receive payments directly to your bank account
+                </p>
               </li>
               <li className="flex items-start gap-2.5">
                 <Check className="text-[#7925FF] h-5 w-5 mt-0.5" />
-                <p className="text-sm text-gray-700">Get paid instantly when clients release milestone payments</p>
+                <p className="text-sm text-gray-700">
+                  Get paid instantly when clients release milestone payments
+                </p>
               </li>
               <li className="flex items-start gap-2.5">
                 <Check className="text-[#7925FF] h-5 w-5 mt-0.5" />
-                <p className="text-sm text-gray-700">Track your earnings and payment history</p>
+                <p className="text-sm text-gray-700">
+                  Track your earnings and payment history
+                </p>
               </li>
               <li className="flex items-start gap-2.5">
                 <Check className="text-[#7925FF] h-5 w-5 mt-0.5" />
-                <p className="text-sm text-gray-700">Industry-standard security for all financial transactions</p>
+                <p className="text-sm text-gray-700">
+                  Industry-standard security for all financial transactions
+                </p>
               </li>
             </ul>
           </div>
-          
+
           {/* Footer note */}
           <p className="text-[10px] text-[#9C9AA5] text-center w-[358px] mt-6">
             By connecting your Stripe account, you accept our <br />

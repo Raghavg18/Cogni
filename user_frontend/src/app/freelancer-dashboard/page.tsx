@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Check } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 
 interface Job {
   id: string;
@@ -37,15 +37,19 @@ export default function FreelancerDashboard() {
     const fetchJobs = async () => {
       try {
         // Get the username from localStorage or context
-        const username = localStorage.getItem("username") || "defaultFreelancerUsername";
+        const username =
+          localStorage.getItem("username") || "defaultFreelancerUsername";
 
-        const response = await fetch(`https://cogni-production.up.railway.app/freelancer-projects/${username}`, {
-          method: "GET",
-          credentials: "include", // Important for cookies
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(
+          `https://cogni-production.up.railway.app/freelancer-projects/${username}`,
+          {
+            method: "GET",
+            credentials: "include", // Important for cookies
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         const data = await response.json();
 
@@ -86,7 +90,9 @@ export default function FreelancerDashboard() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">My Projects</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              My Projects
+            </h1>
             <p className="text-gray-500 text-sm">
               {filteredJobs.length} active projects
             </p>
@@ -112,8 +118,7 @@ export default function FreelancerDashboard() {
             <div
               key={job.id}
               className="bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-all duration-200 border border-[#465FF166]"
-              onClick={() => router.push(`/freelancer-dashboard/${job.id}`)}
-            >
+              onClick={() => router.push(`/freelancer-dashboard/${job.id}`)}>
               <div className="p-6">
                 <div className="mb-4">
                   <h3 className="font-bold text-gray-900 text-lg line-clamp-2 mb-4">
@@ -124,11 +129,15 @@ export default function FreelancerDashboard() {
                   <div className="flex items-center gap-4 mb-6">
                     <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${getProgressColor(job.progress)} rounded-full transition-all duration-500 ease-out relative`}
-                        style={{ width: `${job.progress}%` }}
-                      >
+                        className={`h-full ${getProgressColor(
+                          job.progress
+                        )} rounded-full transition-all duration-500 ease-out relative`}
+                        style={{ width: `${job.progress}%` }}>
                         {job.progress >= 70 && (
-                          <span className={`absolute right-2 text-xs font-bold ${getProgressTextColor(job.progress)}`}>
+                          <span
+                            className={`absolute right-2 text-xs font-bold ${getProgressTextColor(
+                              job.progress
+                            )}`}>
                             {job.progress}%
                           </span>
                         )}
@@ -145,19 +154,30 @@ export default function FreelancerDashboard() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500 text-sm">Total Budget</span>
-                    <span className="font-bold text-gray-900">${job.totalBudget.toLocaleString()}</span>
+                    <span className="font-bold text-gray-900">
+                      ${job.totalBudget.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-sm">Received Amount</span>
-                    <span className="font-bold text-[#7925FF]">${job.receivedAmount.toLocaleString()}</span>
+                    <span className="text-gray-500 text-sm">
+                      Received Amount
+                    </span>
+                    <span className="font-bold text-[#7925FF]">
+                      ${job.receivedAmount.toLocaleString()}
+                    </span>
                   </div>
                   <div className="pt-3 border-t border-gray-100 mt-3">
                     <div className="flex items-center gap-2">
                       <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div 
-                          className="bg-[#7925FF] h-2 rounded-full" 
-                          style={{ width: `${(job.milestones.completed / job.milestones.total) * 100}%` }}
-                        ></div>
+                        <div
+                          className="bg-[#7925FF] h-2 rounded-full"
+                          style={{
+                            width: `${
+                              (job.milestones.completed /
+                                job.milestones.total) *
+                              100
+                            }%`,
+                          }}></div>
                       </div>
                       <span className="text-sm text-gray-500 whitespace-nowrap">
                         {job.milestones.completed}/{job.milestones.total}
@@ -166,7 +186,8 @@ export default function FreelancerDashboard() {
                     <div className="flex gap-2 mt-2 items-center">
                       <Check className="text-[#7925FF] h-4 w-4" />
                       <span className="text-xs text-gray-500">
-                        {job.milestones.completed} of {job.milestones.total} milestones completed
+                        {job.milestones.completed} of {job.milestones.total}{" "}
+                        milestones completed
                       </span>
                     </div>
                   </div>
@@ -181,9 +202,12 @@ export default function FreelancerDashboard() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Search className="text-gray-400 h-8 w-8" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">No projects found</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              No projects found
+            </h3>
             <p className="text-gray-500 text-center max-w-md">
-              We couldn&apos;t find any projects matching your search criteria. Try adjusting your search or check back later.
+              We couldn&apos;t find any projects matching your search criteria.
+              Try adjusting your search or check back later.
             </p>
           </div>
         )}
@@ -193,7 +217,9 @@ export default function FreelancerDashboard() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
               <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Loading projects...</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Loading projects...
+            </h3>
             <p className="text-gray-500 text-center">
               Please wait while we fetch your projects.
             </p>

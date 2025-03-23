@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
@@ -19,27 +18,6 @@ interface DisputeData {
   _id: string;
   disputeTitle: string;
   disputeAmount: string;
-}
-
-type DisputeStatus = "pending" | "accepted" | "rejected";
-type DisputeType = "payment" | "service" | "other";
-
-interface LocalDispute {
-  id: string;
-  title: string;
-  status: DisputeStatus;
-  type: DisputeType;
-  createdAt: string;
-  description: string;
-  details: {
-    amount: string;
-    clientName: string;
-    contractorName: string;
-    timeline: Array<{
-      date: string;
-      event: string;
-    }>;
-  };
 }
 
 interface DisputePageProps {

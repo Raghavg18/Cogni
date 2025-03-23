@@ -6,7 +6,7 @@ import MilestoneTimeline from "@/components/milestone/MilestoneTimeline";
 import MilestoneContainer from "@/components/milestone/MilestoneContainer"; // Import our updated component
 import axios from "axios";
 import { useParams } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext";
+import { useAuth } from "@/components/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 interface ProjectMilestone {
@@ -32,17 +32,17 @@ const MilestonePage = () => {
   const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
   const [loading, setLoading] = useState(true);
   const params = useParams();
-  const {username,isClient} = useAuth()
-  const router = useRouter()
+  const { username, isClient } = useAuth();
+  const router = useRouter();
 
-  useEffect(()=>{
-    console.log(username,isClient)
-    if(username && !isClient){
-      router.push("/freelancer-dashboard")
-    }else if(!username){
-      router.push("/login")
+  useEffect(() => {
+    console.log(username, isClient);
+    if (username && !isClient) {
+      router.push("/freelancer-dashboard");
+    } else if (!username) {
+      router.push("/login");
     }
-  },[username,isClient,router])
+  }, [username, isClient, router]);
 
   useEffect(() => {
     const getProjectDetails = async () => {
