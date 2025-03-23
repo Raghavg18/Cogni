@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import MilestoneSubmitModal, {
   MilestoneSubmitData,
 } from "./MilestoneSubmitModal";
+import { Check, Calendar, FileText, AlertTriangle } from "lucide-react";
 
 interface TimelineItemProps {
   title: string;
@@ -90,41 +91,52 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     }
   };
 
+  const getStatusIcon = () => {
+    switch (status) {
+      case "completed":
+        return <Check className="w-5 h-5 text-white" />;
+      case "active":
+        return <FileText className="w-5 h-5 text-white" />;
+      case "pending":
+        return <Calendar className="w-5 h-5 text-[#7925ff]" />;
+    }
+  };
+
   return (
-    <div className="flex items-start gap-6 py-4 group relative hover:bg-[#f7f9fc] rounded-lg transition-colors duration-200">
-      <div className="relative">
-        {/* Timeline dot with label */}
-        <div className="flex flex-col items-center">
-          <span className={`text-xs font-medium mb-2 ${getStatusTextColor()}`}>
-            {getStatusLabel()}
-          </span>
-          <div
-            className={`w-4 h-4 rounded-full ${getStatusColor()} ring-4 ring-white shadow-sm relative z-10`}
-          />
+    <div className="flex items-start gap-8 py-6 group relative hover:bg-[#f7f9fc] rounded-lg transition-colors duration-200 px-4">
+      <div className="relative flex flex-col items-center">
+        {/* Date display */}
+        <div className="text-sm font-medium mb-4 text-[#4f7296] bg-[#f7f9fc] px-3 py-1 rounded-full">
+          {date}
         </div>
+        
+        {/* Timeline dot with icon */}
+        <div
+          className={`w-10 h-10 rounded-full ${
+            status === "pending" ? "bg-[#f2ecff]" : getStatusColor()
+          } flex items-center justify-center ring-4 ring-white shadow-md relative z-10`}
+        >
+          {getStatusIcon()}
+        </div>
+        
+        {/* Status label */}
+        <span className={`text-xs font-medium mt-2 ${getStatusTextColor()}`}>
+          {getStatusLabel()}
+        </span>
+        
         {/* Connecting line */}
         {!isLast && (
-          <div className="absolute left-2 top-10 bottom-0 w-0.5 bg-gradient-to-b from-current to-[#f2ecff] -z-10" />
+          <div className="absolute left-1/2 top-24 h-16 w-1 bg-gradient-to-b from-current to-[#f2ecff] transform -translate-x-1/2 -z-10" />
         )}
       </div>
-      <div className="flex-1 pt-1">
-        <h3 className="text-[#0c141c] font-medium text-base mb-1 group-hover:text-[#7925ff] transition-colors">
+      
+      <div className="flex-1 pt-1 bg-white p-5 rounded-xl shadow-sm border border-[#f0f0f5] hover:border-[#7925ff] transition-all duration-200">
+        <h3 className="text-[#0c141c] font-semibold text-lg mb-3 group-hover:text-[#7925ff] transition-colors">
           {title}
         </h3>
-        <div className="flex items-center gap-2">
-          <svg
-            className="w-4 h-4 text-[#4f7296]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <span className="text-sm text-[#4f7296]">{date}</span>
+        <div className="flex items-center gap-2 text-[#4f7296]">
+          <Calendar className="w-4 h-4" />
+          <span className="text-sm">{date}</span>
         </div>
       </div>
     </div>
@@ -134,15 +146,14 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 const BudgetCard: React.FC<BudgetCardProps> = ({
   title,
   amount,
-  textColor = "text-[rgba(13,20,28,1)]",
+  textColor = "text-[#0d141c]",
 }) => {
   return (
-    <div className="bg-white flex flex-col overflow-hidden whitespace-nowrap flex-1 pl-[22px] pr-[59px] pt-[13px] pb-[21px] rounded-2xl max-md:px-5">
-      <div className="text-[rgba(13,20,28,1)] text-lg font-semibold leading-none">
+    <div className="bg-white flex flex-col overflow-hidden flex-1 p-6 rounded-xl shadow-sm border border-[#f0f0f5] hover:shadow-md transition-all duration-200">
+      <div className="text-[#4f7296] text-base font-medium leading-none mb-3">
         {title}
       </div>
-      <div
-        className={`${textColor} text-[26px] font-bold leading-none mt-[9px]`}>
+      <div className={`${textColor} text-3xl font-bold leading-none`}>
         {amount}
       </div>
     </div>
@@ -158,18 +169,18 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
-  const [selectedMilestoneAmount, setSelectedMilestoneAmount] =
-    useState<number>();
+  const [selectedMilestoneAmount, setSelectedMilestoneAmount] = useState<number>();
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProjectData = async () => {
+      setLoading(true);
       try {
         const response = await fetch(
           `http://localhost:8000/project/${projectId}`
         );
-        console.log(response);
         if (!response.ok) {
           throw new Error("Failed to fetch project data");
         }
@@ -179,6 +190,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       } catch (err) {
         console.error(err);
       } finally {
+        setLoading(false);
       }
     };
 
@@ -231,15 +243,14 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
-        return "bg-[rgba(242,236,255,1)] text-[rgba(13,20,28,1)]";
+        return "bg-[#e6f7e6] text-[#34b233]";
       case "submitted":
-        return "bg-[rgba(255,236,161,1)] text-[rgba(13,20,28,1)]";
+        return "bg-[#fff5cc] text-[#f59e0b]";
       default:
-        return "bg-[rgba(121,37,255,1)] text-white";
+        return "bg-[#7925ff] text-white";
     }
   };
 
-  // Client-side fix in handleMilestoneSubmit function
   const handleMilestoneSubmit = async (
     data: MilestoneSubmitData,
     milestoneId: string
@@ -251,21 +262,16 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       // Add text fields
       formData.append("milestoneId", milestoneId);
       formData.append("repositoryUrl", data.repositoryUrl);
-      formData.append("hostingUrl", data.hostedUrl); // Note the name difference from your server
+      formData.append("hostingUrl", data.hostedUrl);
       formData.append("externalFiles", data.externalFiles);
-      formData.append("notes", data.note); // Note the name difference from your server
+      formData.append("notes", data.note);
 
       // Add all files
       data.files.forEach((file: string | Blob) => {
-        formData.append("images", file); // Make sure this matches your server's expected field name
+        formData.append("images", file);
       });
 
-      // Log the formData keys to verify what's being sent
-      for (const pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
-      // Make the API call with the correct content type for file uploads
+      // Make the API call
       const response = await axios.post(
         "http://localhost:8000/submit-milestone",
         formData,
@@ -276,9 +282,6 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
         }
       );
 
-      console.log("Submission response:", response.data);
-
-      // Handle successful submission
       if (response.data.success) {
         // Update local state to reflect the change
         setMilestones((prev) =>
@@ -291,88 +294,103 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
 
         // Show success message
         alert("Milestone submitted successfully");
+        setIsModalOpen(false);
       } else {
         throw new Error(response.data.message || "Submission failed");
       }
     } catch (error) {
       console.error("Error submitting milestone:", error);
       if (error instanceof Error) {
-        alert(
-          `Error submitting milestone: ${error.message || "Unknown error"}`
-        );
+        alert(`Error submitting milestone: ${error.message || "Unknown error"}`);
       } else {
         alert("Error submitting milestone: Unknown error");
       }
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#7925ff]"></div>
+      </div>
+    );
+  }
+
+  // Find the first pending milestone
+  const firstPendingMilestone = milestones.find(m => m.status === "pending");
+
   return (
-    <div className="min-w-60 w-full max-w-[960px] overflow-hidden flex-1 shrink basis-[0%] max-md:max-w-full">
-      {/* Breadcrumb */}
-      <nav className="flex w-full gap-[8px_100px] font-medium justify-between flex-wrap p-4 max-md:max-w-full">
-        <div className="flex items-stretch gap-2 text-base text-[rgba(79,115,150,1)] w-[132px]">
-          <a href="#" className="whitespace-nowrap">
-            Home
-          </a>
-          <span className="whitespace-nowrap">/</span>
-          <span className="text-[rgba(13,20,28,1)]">All Jobs</span>
-        </div>
-        <div className="text-sm text-[rgba(13,20,28,1)] text-center w-[211px]">
-          <div className="bg-[rgba(255,236,161,1)] flex min-w-[84px] min-h-8 max-w-full w-[211px] items-center overflow-hidden justify-center px-4 rounded-[10px]">
-            <div className="self-stretch w-[179px] overflow-hidden my-auto">
-              Milestone Review Pending
-            </div>
+    <div className="w-full max-w-[1000px] mx-auto px-4 py-8">
+      {/* Project Status Banner */}
+      <div className="bg-[#fff5cc] mb-6 rounded-xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-[#f59e0b] p-2 rounded-full">
+            <FileText className="text-white w-5 h-5" />
           </div>
+          <span className="font-medium">Funded</span>
         </div>
-      </nav>
-      {/* Title and Progress */}
-      <div className="w-full max-md:max-w-full">
-        <div className="flex gap-[12px_0px] text-[32px] text-[rgba(13,20,28,1)] font-bold leading-none justify-between flex-wrap p-4">
-          <h1 className="min-w-72 w-72">{project?.name}</h1>
-        </div>
-        <div className="w-full p-4 max-md:max-w-full">
-          <div className="flex w-full gap-[40px_100px] text-[rgba(13,20,28,1)] whitespace-nowrap justify-between flex-wrap max-md:max-w-full">
-            <div className="text-base font-medium w-[70px]">Progress</div>
-            <div className="min-h-6 text-sm font-normal w-8">{progress}%</div>
+      </div>
+
+      {/* Project Title and Progress */}
+      <div className="bg-white rounded-xl shadow-sm border border-[#f0f0f5] p-6 mb-8">
+        <h1 className="text-3xl font-bold text-[#0d141c] mb-6">{project?.name}</h1>
+        
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-base font-medium text-[#4f7296]">Project Progress</span>
+            <span className="text-lg font-bold text-[#7925ff]">{progress}%</span>
           </div>
-          <div className="rounded bg-[rgba(242,236,255,1)] flex w-full flex-col mt-3 max-md:max-w-full">
-            <div
-              className="rounded bg-[rgba(121,37,255,1)] flex min-h-2"
+          <div className="h-3 w-full bg-[#f2ecff] rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-[#7925ff] rounded-full transition-all duration-1000"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
+
+        {/* Budget Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <BudgetCard
+            title="Total Budget"
+            amount={`$${totalBudget.toLocaleString()}`}
+          />
+          <BudgetCard
+            title="Received"
+            amount={`$${receivedAmount.toLocaleString()}`}
+            textColor="text-[#34b233]"
+          />
+          <BudgetCard
+            title="Pending"
+            amount={`$${pendingAmount.toLocaleString()}`}
+            textColor="text-[#7925ff]"
+          />
+        </div>
       </div>
-      {/* Budget Cards */}
-      <div className="flex w-full items-stretch gap-[37px] flex-wrap mt-8 rounded-2xl max-md:max-w-full">
-        <BudgetCard
-          title="Total Budget"
-          amount={`$${totalBudget.toLocaleString()}`}
-        />
-        <BudgetCard
-          title="Received"
-          amount={`$${receivedAmount.toLocaleString()}`}
-          textColor="text-[rgba(52,178,51,1)]"
-        />
-        <BudgetCard
-          title="Pending"
-          amount={`$${pendingAmount.toLocaleString()}`}
-          textColor="text-[rgba(105,105,105,1)]"
-        />
-      </div>
+
       {/* Timeline Section */}
-      <section className="mt-12 bg-white rounded-xl border border-[#e5e8ea] overflow-hidden">
-        <div className="p-6 border-b border-[#e5e8ea]">
-          <h2 className="text-xl font-semibold text-[#0c141c]">
-            Milestones Timeline
-          </h2>
-          <p className="text-[#4f7296] mt-1">
-            Track your project&apos;s progress through completed milestones
-          </p>
+      <section className="mt-12 bg-white rounded-xl border border-[#f0f0f5] shadow-sm overflow-hidden mb-8">
+        <div className="p-6 border-b border-[#f0f0f5] flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-[#0d141c]">Milestones Timeline</h2>
+            <p className="text-[#4f7296] mt-1">Track your project&apos;s progress through completed milestones</p>
+          </div>
+          {firstPendingMilestone && (
+            <button
+              onClick={() => {
+                setSelectedMilestoneId(firstPendingMilestone._id);
+                setSelectedMilestoneAmount(firstPendingMilestone.amount);
+                setIsModalOpen(true);
+              }}
+              className="bg-[#7925ff] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#6615e6] transition-colors flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Submit Milestone
+            </button>
+          )}
         </div>
 
         <div className="p-6 bg-gradient-to-b from-white to-[#f7f9fc]">
-          <div className="relative pl-4">
+          <div className="relative">
             {milestones.map((milestone, index) => (
               <TimelineItem
                 key={milestone._id}
@@ -385,81 +403,76 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
           </div>
         </div>
       </section>
-      {/* Milestone Items */}
-      {milestones.map((milestone) => (
-        <div
-          key={milestone._id}
-          className="bg-white flex w-full flex-col items-stretch justify-center mt-8 py-2.5 rounded-2xl max-md:max-w-full">
-          <div className="flex min-h-[72px] w-full items-center gap-[40px_100px] justify-between flex-wrap px-4 py-3 max-md:max-w-full">
-            <div className="self-stretch flex min-w-60 items-center gap-4 my-auto">
-              <div className="bg-[rgba(191,255,190,1)] self-stretch flex min-h-12 items-center justify-center w-12 h-12 my-auto rounded-lg">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-              </div>
-              <div className="self-stretch flex min-w-60 flex-col items-stretch justify-center w-[314px] my-auto">
-                <div className="max-w-full w-[314px] overflow-hidden text-base text-[rgba(13,20,28,1)] font-medium">
-                  {milestone.description}
+
+      {/* Milestone Details Cards */}
+      <div className="grid grid-cols-1 gap-4 mt-8">
+        {milestones.map((milestone) => (
+          <div
+            key={milestone._id}
+            className="bg-white border border-[#f0f0f5] hover:border-[#7925ff] rounded-xl shadow-sm p-6 transition-all duration-200"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className={`${
+                  milestone.status === "paid" 
+                    ? "bg-[#e6f7e6]" 
+                    : milestone.status === "submitted" 
+                      ? "bg-[#fff5cc]" 
+                      : "bg-[#f2ecff]"
+                } p-3 rounded-lg`}>
+                  <FileText className={`w-6 h-6 ${
+                    milestone.status === "paid" 
+                      ? "text-[#34b233]" 
+                      : milestone.status === "submitted" 
+                        ? "text-[#f59e0b]" 
+                        : "text-[#7925ff]"
+                  }`} />
                 </div>
-                <div className="w-[253px] max-w-full overflow-hidden text-sm text-[rgba(79,115,150,1)] font-normal">
-                  ${milestone.amount.toLocaleString()} -{" "}
-                  {getFormattedDate(milestone.updatedAt)}
-                </div>
-              </div>
-            </div>
-            <div className="self-stretch flex items-stretch gap-[25px] my-auto">
-              <button className="overflow-hidden cursor-pointer text-xs text-[#ff2525] font-normal underline leading-[21px] my-auto">
-                Raise Dispute
-              </button>
-              <button className="overflow-hidden cursor-pointer text-xs text-[rgba(121,37,255,1)] font-normal underline leading-[21px] my-auto">
-                View Details
-              </button>
-              <div className="text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap text-center">
-                <div
-                  className={`${getStatusColor(
-                    milestone.status
-                  )} flex min-w-[84px] min-h-8 w-24 items-center overflow-hidden justify-center px-4 rounded-[10px]`}>
-                  <div className="self-stretch w-16 overflow-hidden my-auto">
-                    {getStatusLabel(milestone.status)}
+                <div>
+                  <h3 className="text-lg font-semibold text-[#0d141c] mb-1">
+                    {milestone.description}
+                  </h3>
+                  <div className="flex items-center gap-4 text-[#4f7296]">
+                    <span className="text-base font-bold text-[#7925ff]">
+                      ${milestone.amount.toLocaleString()}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span className="text-sm">{getFormattedDate(milestone.updatedAt)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
+              
+              <div className="flex items-center gap-4"> 
+                <button className="text-[#4f7296] hover:text-[#7925ff] text-sm font-medium underline">
+                  View Details
+                </button>
+                
+                <div className={`${getStatusColor(milestone.status)} px-4 py-2 rounded-lg text-sm font-medium`}>
+                  {getStatusLabel(milestone.status)}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-      {milestones.some((m) => m.status === "pending") && (
-        <div className="flex w-full text-base text-[rgba(13,20,28,1)] font-bold text-center mt-8 px-4 py-3 max-md:max-w-full">
-          <div className="flex flex-wrap gap-4">
-            {milestones
-              .filter((m) => m.status === "pending")
-              .map((milestone) => (
-                <button
-                  key={milestone._id}
-                  onClick={() => {
-                    setSelectedMilestoneId(milestone._id);
-                    setSelectedMilestoneAmount(milestone.amount);
-                    setIsModalOpen(true);
-                  }}
-                  className="bg-[rgba(121,37,255,1)] text-white flex min-w-[84px] min-h-12 items-center overflow-hidden justify-center px-5 rounded-xl">
-                  Submit: {milestone.description}
-                </button>
-              ))}
+        ))}
+      </div>
+
+      {/* Need Help Section */}
+      <div className="mt-12 bg-[#f7f9fc] border border-[#f0f0f5] rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-start gap-4">
+          <div className="bg-[#fff5cc] p-3 rounded-full">
+            <AlertTriangle className="w-6 h-6 text-[#f59e0b]" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-[#0d141c] mb-1">Need Help with Your Project?</h3>
+            <p className="text-[#4f7296]">Contact our support team for assistance with your milestones</p>
           </div>
         </div>
-      )}
+        <button className="bg-white text-[#7925ff] border border-[#7925ff] px-6 py-3 rounded-lg font-medium hover:bg-[#7925ff] hover:text-white transition-colors whitespace-nowrap">
+          Contact Support
+        </button>
+      </div>
 
       <MilestoneSubmitModal
         isOpen={isModalOpen}

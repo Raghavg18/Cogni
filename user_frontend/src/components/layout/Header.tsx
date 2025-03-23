@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 const Header: React.FC = () => {
   return (
@@ -24,34 +23,29 @@ const Header: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <button className="bg-[rgba(232,237,242,1)] flex min-h-10 items-center gap-2 overflow-hidden justify-center w-10 h-10 max-w-[480px] px-2.5 rounded-xl">
-            <div className="self-stretch w-5 flex-1 shrink basis-[0%] my-auto">
-              <Image
+            <div className="self-stretch w-full flex-1 shrink basis-[0%] my-auto">
+              <img
                 src="https://cdn.builder.io/api/v1/image/assets/TEMP/bbb85c1e8fe27a8497081e05b7a0a479c380e574?placeholderIfAbsent=true"
-                className="aspect-[1] object-contain flex-1"
-                fill
+                className="aspect-[1] object-contain w-5 flex-1"
                 alt="Notification"
               />
             </div>
           </button>
           <button className="bg-[rgba(232,237,242,1)] flex min-h-10 items-center gap-2 overflow-hidden justify-center w-10 h-10 max-w-[480px] px-2.5 rounded-xl">
-            <div className="self-stretch w-5 flex-1 shrink basis-[0%] my-auto">
-              <Image
+            <div className="self-stretch w-full flex-1 shrink basis-[0%] my-auto">
+              <img
                 src="https://cdn.builder.io/api/v1/image/assets/TEMP/3efb8a5d9e570f293718c4fa7d389324fe0d4173?placeholderIfAbsent=true"
                 className="aspect-[1] object-contain w-5 flex-1"
-                fill
                 alt="Messages"
               />
             </div>
           </button>
         </div>
-        <div className="relative w-10">
-          <Image
-            src="https://cdn.builder.io/api/v1/image/assets/TEMP/62b637a0e998ef23af08ab02b840e7e2bab13a36?placeholderIfAbsent=true"
-            className="aspect-[1] object-contain w-10 shrink-0 rounded-[20px]"
-            fill
-            alt="User profile"
-          />
-        </div>
+        <img
+          src="https://cdn.builder.io/api/v1/image/assets/TEMP/62b637a0e998ef23af08ab02b840e7e2bab13a36?placeholderIfAbsent=true"
+          className="aspect-[1] object-contain w-10 shrink-0 rounded-[20px]"
+          alt="User profile"
+        />
       </div>
     </div>
   );

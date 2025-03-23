@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams } from "next/navigation";
 import MilestoneContainer from "@/components/freelancer/MilestoneContainer";
+import { useAuth } from "@/app/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface ProjectParams {
   projectId: string;
@@ -10,6 +12,16 @@ interface ProjectParams {
 
 const ProjectDetails: React.FC = () => {
   const params = useParams() as unknown as ProjectParams;
+  const {username,isClient} = useAuth()
+  const router = useRouter()
+  useEffect(()=>{
+    console.log(username,isClient)
+    if(username && isClient){
+      router.push("/client-dashboard/milestone-tracker")
+    }else if(!username){
+      router.push("/login")
+    }
+  },[username,isClient,router])
 
   return (
     <div className="min-h-screen bg-white">
