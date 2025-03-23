@@ -116,26 +116,28 @@ app.post("/login", async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: "User does not exist" });
 
-    const isPasswordCorrect = bcrypt.compare(password, user.password);
+    const isPasswordCorrect = await bcrypt.compare(password, user.password); // Note: Added 'await' here
     if (!isPasswordCorrect)
       return res.status(403).json({ message: "Invalid password" });
 
     const token = jwt.sign(
       { id: user._id, username: user.username },
       JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "1h" }
     );
 
+    // Modified cookie settings for deployment
     res.cookie("uuid", token, {
-      httpOnly: false,
-      secure: true,
-      sameSite: "strict",
+      httpOnly: true,
+      secure: false, // Only use secure in production
+      sameSite: 'lax', // Use 'none' in production for cross-site
+      maxAge: 3600000, // 1 hour in milliseconds
+      path: '/'
     });
-    res.status(200).json({
-      message: "Login successful",
-      username: user.username,
-      role: user.role,
-    });
+    
+    res
+      .status(200)
+      .json({ message: "Login successful", username: user.username, role: user.role });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
