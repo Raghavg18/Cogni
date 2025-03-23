@@ -129,7 +129,7 @@ app.post("/login", async (req, res) => {
     // Modified cookie settings for deployment
     res.cookie("uuid", token, {
       httpOnly: true,
-      secure: false, // Only use secure in production
+      secure: true, // Only use secure in production
       sameSite: 'lax', // Use 'none' in production for cross-site
       maxAge: 3600000, // 1 hour in milliseconds
       path: '/'
