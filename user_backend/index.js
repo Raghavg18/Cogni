@@ -20,7 +20,7 @@ const MONGO_URL =
   "mongodb+srv://anishsuman2305:dJ5i9XpBo8ZHatvi@cluster0.nocae.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const saltRounds = 10;
 const stripe = Stripe(
-  "sk_test_51R5086GdIuM6VO5RFKcFxEcaIYkuwOnqRGVAUzhTutX6sSNSvUlI9kKDvzKLqdZhqtxN40gLxdUirCs96h6SJ4k200EMU8yipT"
+  "sk_test_51R5086GdIuM6VO5RFKcFxEcaIYkuwOnqRGVAUzhTutX6sSNSvUlI9kKDvzKLqdZhqtxN40gLxdUirCs96h6SJ4k200EMU8yipT",
 );
 const genAI = new GoogleGenerativeAI("AIzaSyC7SAkw_PDHTdnahWu0mnId8DZzIVIyhkg");
 
@@ -29,14 +29,25 @@ mongoose
   .then(() => console.log("Database connected"))
   .catch((err) => console.error("error:", err));
 
+const allowedOrigins = [
+  "https://cogni-gamma.vercel.app",
+  "http://localhost:3000",
+];
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "*",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  })
+  }),
 );
 
 cloudinary.config({
@@ -112,7 +123,7 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, username: user.username },
       JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     res.cookie("uuid", token, {
@@ -200,7 +211,7 @@ app.patch("/disputes/:id/resolve", async (req, res) => {
     const dispute = await Dispute.findByIdAndUpdate(
       id,
       { status: "accepted" },
-      { new: true }
+      { new: true },
     );
 
     console.log("DIspute: ", dispute);
@@ -220,7 +231,7 @@ app.patch("/disputes/:id/reject", async (req, res) => {
     const dispute = await Dispute.findByIdAndUpdate(
       req.params.id,
       { status: "rejected" },
-      { new: true }
+      { new: true },
     );
 
     if (!dispute) {
@@ -355,7 +366,7 @@ app.post("/fund-escrow", async (req, res) => {
 
   await Milestone.updateMany(
     { projectId: projectId, status: "pending" },
-    { $set: { paymentIntentId: paymentIntent.id } }
+    { $set: { paymentIntentId: paymentIntent.id } },
   );
   await Project.findByIdAndUpdate(projectId, { $inc: { totalAmount: amount } });
 
@@ -393,7 +404,7 @@ app.post("/submit-milestone", upload.array("images", 10), async (req, res) => {
         notes,
         images: imageUrls,
       },
-      { new: true } // Return the updated document
+      { new: true }, // Return the updated document
     );
 
     if (!updatedMilestone) {
@@ -718,7 +729,7 @@ app.get("/client-projects/:clientId", async (req, res) => {
         // Calculate completion percentage based on milestones
         const totalMilestones = milestones.length;
         const completedMilestones = milestones.filter(
-          (m) => m.status === "paid" || m.status === "submitted"
+          (m) => m.status === "paid" || m.status === "submitted",
         ).length;
 
         const completionPercentage =
@@ -729,7 +740,7 @@ app.get("/client-projects/:clientId", async (req, res) => {
         // Calculate total project value from milestones
         const totalAmount = milestones.reduce(
           (sum, milestone) => sum + milestone.amount,
-          0
+          0,
         );
 
         return {
@@ -743,7 +754,7 @@ app.get("/client-projects/:clientId", async (req, res) => {
           createdAt: project.createdAt,
           milestones,
         };
-      })
+      }),
     );
 
     res.status(200).json({
@@ -783,7 +794,7 @@ app.get("/freelancer-projects/:freelancerId", async (req, res) => {
         // Calculate completion percentage based on milestones
         const totalMilestones = milestones.length;
         const completedMilestones = milestones.filter(
-          (m) => m.status === "paid" || m.status === "submitted"
+          (m) => m.status === "paid" || m.status === "submitted",
         ).length;
 
         const progress =
@@ -808,7 +819,7 @@ app.get("/freelancer-projects/:freelancerId", async (req, res) => {
             completed: completedMilestones,
           },
         };
-      })
+      }),
     );
 
     res.status(200).json({
@@ -881,13 +892,13 @@ app.post("/generate-milestones", async (req, res) => {
             },
           ],
         }),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        `Gemini API error: ${errorData.error?.message || "Unknown error"}`
+        `Gemini API error: ${errorData.error?.message || "Unknown error"}`,
       );
     }
 
@@ -917,7 +928,7 @@ app.post("/generate-milestones", async (req, res) => {
 
       if (timeEstimate) {
         const match = timeEstimate.match(
-          /\+(\d+)\s+(day|days|week|weeks|month|months)/i
+          /\+(\d+)\s+(day|days|week|weeks|month|months)/i,
         );
         if (match) {
           const amount = parseInt(match[1]);
@@ -947,7 +958,7 @@ app.post("/generate-milestones", async (req, res) => {
     // Calculate total budget
     const totalAmount = processedMilestones.reduce(
       (sum, milestone) => sum + (parseFloat(milestone.amount) || 0),
-      0
+      0,
     );
 
     res.json({
