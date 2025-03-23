@@ -4,7 +4,6 @@ import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { Check } from "lucide-react";
-import Link from "next/link";
 
 const StripeOnboardingPage = () => {
   const [loading, setLoading] = useState(false);
