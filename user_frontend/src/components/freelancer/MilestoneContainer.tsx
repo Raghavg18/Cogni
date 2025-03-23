@@ -316,7 +316,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   const handleDisputeSubmit = async (data: DisputeData) => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/disputes",
+        "https://cogni-production.up.railway.app/disputes",
         data,
         {
           withCredentials: true,

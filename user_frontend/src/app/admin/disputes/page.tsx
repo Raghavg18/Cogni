@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
-const API_URL = "http://localhost:8000/disputes"; // Change this if deployed
+const API_URL = "https://cogni-production.up.railway.app/disputes"; // Change this if deployed
 
 export default function DisputesPage() {
   const router = useRouter();

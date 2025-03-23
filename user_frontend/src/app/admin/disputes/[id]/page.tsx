@@ -55,7 +55,7 @@ export default function DisputePage({ params }: DisputePageProps) {
         const resolvedParams = await params;
         console.log("ID: ", resolvedParams);
         const response = await fetch(
-          `http://localhost:8000/disputes/${resolvedParams.id}`
+          `https://cogni-production.up.railway.app/disputes/${resolvedParams.id}`
         );
         console.log("RESPPNSE:", response);
         if (!response.ok) throw new Error("Failed to fetch dispute");
@@ -72,7 +72,7 @@ export default function DisputePage({ params }: DisputePageProps) {
   const handleDisputeAction = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8000/disputes/${localDispute._id}/${
+        `https://cogni-production.up.railway.app/disputes/${localDispute._id}/${
           actionType === "approve" ? "resolve" : "reject"
         }`,
         {
