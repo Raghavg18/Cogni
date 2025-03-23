@@ -275,7 +275,7 @@ app.post("/connect-stripe", async (req, res) => {
         const accountLink = await stripe.accountLinks.create({
           account: user.stripeAccountId,
           refresh_url: `http://cogni-gamma.vercel.app/stripe-refresh?username=${username}`,
-          return_url: `http://cogni-gamma.vercel.app/stripe-return?username=${username}`,
+          return_url: `http://cogni-gamma.vercel.app/onboarding`,
           type: "account_onboarding",
         });
 
@@ -466,7 +466,7 @@ app.post("/release-payment", async (req, res) => {
       const accountLink = await stripe.accountLinks.create({
         account: freelancer.stripeAccountId,
         refresh_url: `http://cogni-gamma.vercel.app/stripe-refresh?milestoneId=${milestoneId}`,
-        return_url: `http://cogni-gamma.vercel.app/stripe-return?milestoneId=${milestoneId}`,
+        return_url: `http://cogni-gamma.vercel.app/onboarding`,
         type: "account_onboarding",
       });
 
