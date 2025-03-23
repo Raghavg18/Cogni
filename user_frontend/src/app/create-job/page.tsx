@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { XCircle, Wand2 } from "lucide-react";
+import { XCircle, Wand2, Plus, Calendar, DollarSign } from "lucide-react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import Header from "@/components/layout/Header";
 
 const CreateJob: React.FC = () => {
   const router = useRouter();
@@ -214,117 +215,94 @@ const CreateJob: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc]">
-      {/* Header Component would go here */}
-      <main className="max-w-7xl mx-auto p-8 md:p-12 lg:p-16">
-        <div className="mb-12">
-          <h1 className="font-bold text-[#0c141c] text-[32px] leading-10 mb-3">
-            Create a New Project
-          </h1>
-          <p className="text-[#4f7296] text-lg max-w-2xl">
-            Define your project details and set up milestones to track progress
-            and payments
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#F5F5F7] flex-col justify-center items-center">
+      <Header />
+      <div className="w-full max-w-3xl mx-auto px-4 py-5">
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden p-8">
+          <h1 className="font-bold text-2xl text-center mb-8">Create a New Project</h1>
+          
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
 
-        <div className="bg-white rounded-2xl border border-[#e5e8ea] shadow-sm overflow-hidden">
           {/* Project Details Section */}
-          <div className="p-6 border-b border-[#e5e8ea]">
-            <h2 className="font-semibold text-[#0c141c] text-xl mb-6">
-              Project Details
-            </h2>
-
-            <div className="space-y-6">
+          <div className="mb-8">
+            <h2 className="font-medium text-lg mb-4">Project Details</h2>
+            
+            <div className="flex flex-col gap-6">
               <div>
-                <label
-                  htmlFor="projectTitle"
-                  className="block text-sm font-medium text-[#0c141c] mb-2">
-                  Project Title
-                </label>
+                <label htmlFor="projectTitle" className="block mb-2 text-sm">Project Title</label>
                 <input
                   type="text"
                   id="projectTitle"
-                  className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                  className="w-full h-12 border border-[#465FF166] rounded-lg p-4 focus:outline-none focus:border-2 focus:border-[#7925FF]"
                   value={projectTitle}
                   onChange={(e) => setProjectTitle(e.target.value)}
-                  placeholder="Enter a clear, descriptive title for your project"
+                  placeholder="Enter project title"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="projectDescription"
-                  className="block text-sm font-medium text-[#0c141c] mb-2">
-                  Project Description
-                </label>
+                <label htmlFor="projectDescription" className="block mb-2 text-sm">Project Description</label>
                 <textarea
                   id="projectDescription"
-                  className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
-                  rows={5}
+                  className="w-full border border-[#465FF166] rounded-lg p-4 focus:outline-none focus:border-2 focus:border-[#7925FF]"
+                  rows={4}
                   value={projectDescription}
                   onChange={(e) => setProjectDescription(e.target.value)}
-                  placeholder="Describe the project scope, requirements, and expectations in detail..."
+                  placeholder="Describe your project requirements and expectations..."
                 />
               </div>
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="border-t border-[#E1E1E4] my-6"></div>
+
           {/* Milestones Section */}
-          <div className="p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
-              <h2 className="font-semibold text-[#0c141c] text-xl mb-4 sm:mb-0">
-                Project Milestones{" "}
-                {milestones.length > 0 && `(${milestones.length})`}
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-medium text-lg">
+                Project Milestones {milestones.length > 0 && `(${milestones.length})`}
               </h2>
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-3">
                 <button
                   onClick={generateMilestones}
-                  disabled={
-                    isGenerating || !projectTitle || !projectDescription
-                  }
-                  className={`flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium
-                    ${
-                      !projectTitle || !projectDescription || isGenerating
-                        ? "bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed"
-                        : "bg-[#e9f4ff] text-[#4f7296] hover:bg-[#d5e8ff]"
+                  disabled={isGenerating || !projectTitle || !projectDescription}
+                  className={`flex items-center justify-center rounded-lg px-4 py-2 text-sm
+                    ${!projectTitle || !projectDescription || isGenerating
+                      ? "bg-[#E1E1E4] text-[#9C9AA5] cursor-not-allowed"
+                      : "bg-[#D1D7FB] text-[#465FF1] hover:bg-[#B9C3F8]"
                     }`}>
                   <Wand2 size={16} className="mr-2" />
                   {isGenerating ? "Generating..." : "Auto-Generate"}
                 </button>
                 <button
                   onClick={handleAddMilestone}
-                  className="flex items-center justify-center bg-[#7925FF] text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors">
-                  <span className="mr-2">+</span> Add Milestone
+                  className="flex items-center justify-center bg-[#7925FF] text-white rounded-lg px-4 py-2 text-sm transition-colors hover:bg-[#6817E2]">
+                  <Plus size={16} className="mr-2" />
+                  Add Milestone
                 </button>
               </div>
             </div>
 
-            {/* Error message */}
-            {error && (
-              <div className="text-red-600 mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
-                {error}
-              </div>
-            )}
-
             {/* Milestone Form */}
             {showMilestoneForm && (
-              <div className="bg-[#f7f9fc] p-6 rounded-lg mb-6 border border-[#e5e8ea]">
-                <h3 className="font-medium text-[#0c141c] text-lg mb-4">
-                  New Milestone
-                </h3>
+              <div className="bg-[#F5F5F7] p-6 rounded-lg mb-6 border border-[#E1E1E4]">
+                <h3 className="font-medium text-lg mb-4">New Milestone</h3>
 
-                <div className="space-y-4">
+                <div className="flex flex-col gap-6">
                   <div>
-                    <label
-                      htmlFor="milestoneTitle"
-                      className="block text-sm font-medium text-[#0c141c] mb-2">
+                    <label htmlFor="milestoneTitle" className="block mb-2 text-sm">
                       Title
                     </label>
                     <input
                       type="text"
                       id="milestoneTitle"
                       name="title"
-                      className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                      className="w-full h-12 border border-[#465FF166] rounded-lg p-4 focus:outline-none focus:border-2 focus:border-[#7925FF]"
                       value={newMilestone.title}
                       onChange={handleMilestoneInputChange}
                       placeholder="E.g., Initial Design, MVP Development"
@@ -332,15 +310,13 @@ const CreateJob: React.FC = () => {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="milestoneDescription"
-                      className="block text-sm font-medium text-[#0c141c] mb-2">
+                    <label htmlFor="milestoneDescription" className="block mb-2 text-sm">
                       Description
                     </label>
                     <textarea
                       id="milestoneDescription"
                       name="description"
-                      className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                      className="w-full border border-[#465FF166] rounded-lg p-4 focus:outline-none focus:border-2 focus:border-[#7925FF]"
                       rows={3}
                       value={newMilestone.description}
                       onChange={handleMilestoneInputChange}
@@ -348,38 +324,35 @@ const CreateJob: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label
-                        htmlFor="milestoneDate"
-                        className="block text-sm font-medium text-[#0c141c] mb-2">
+                      <label htmlFor="milestoneDate" className="block mb-2 text-sm">
                         Due Date
                       </label>
-                      <input
-                        type="date"
-                        id="milestoneDate"
-                        name="date"
-                        className="w-full p-3 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
-                        value={newMilestone.date}
-                        onChange={handleMilestoneInputChange}
-                      />
+                      <div className="relative">
+                        <Calendar size={16} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#9C9AA5]" />
+                        <input
+                          type="date"
+                          id="milestoneDate"
+                          name="date"
+                          className="w-full h-12 border border-[#465FF166] rounded-lg p-4 pl-10 focus:outline-none focus:border-2 focus:border-[#7925FF]"
+                          value={newMilestone.date}
+                          onChange={handleMilestoneInputChange}
+                        />
+                      </div>
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="milestoneAmount"
-                        className="block text-sm font-medium text-[#0c141c] mb-2">
+                      <label htmlFor="milestoneAmount" className="block mb-2 text-sm">
                         Payment Amount
                       </label>
                       <div className="relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#4f7296]">
-                          $
-                        </span>
+                        <DollarSign size={16} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#9C9AA5]" />
                         <input
                           type="text"
                           id="milestoneAmount"
                           name="amount"
-                          className="w-full p-3 pl-8 border border-[#e5e8ea] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4f7296] bg-white"
+                          className="w-full h-12 border border-[#465FF166] rounded-lg p-4 pl-10 focus:outline-none focus:border-2 focus:border-[#7925FF]"
                           value={newMilestone.amount}
                           onChange={handleMilestoneInputChange}
                           placeholder="0.00"
@@ -391,12 +364,12 @@ const CreateJob: React.FC = () => {
                   <div className="flex justify-end gap-3 pt-2">
                     <button
                       onClick={() => setShowMilestoneForm(false)}
-                      className="px-4 py-2.5 rounded-lg text-[#4f7296] hover:bg-[#e5e8ea] transition-colors text-sm font-medium">
+                      className="px-4 py-2 rounded-lg text-[#9C9AA5] hover:bg-[#E1E1E4] transition-colors text-sm">
                       Cancel
                     </button>
                     <button
                       onClick={handleCreateMilestone}
-                      className="px-4 py-2.5 rounded-lg bg-[#7925FF] text-white transition-colors text-sm font-medium">
+                      className="px-4 py-2 rounded-lg bg-[#7925FF] text-white transition-colors text-sm hover:bg-[#6817E2]">
                       Save Milestone
                     </button>
                   </div>
@@ -406,40 +379,42 @@ const CreateJob: React.FC = () => {
 
             {/* Timeline of Milestones */}
             {milestones.length > 0 ? (
-              <div className="border border-[#e5e8ea] rounded-lg overflow-hidden mb-8">
-                <div className="divide-y divide-[#e5e8ea]">
+              <div className="border border-[#E1E1E4] rounded-lg overflow-hidden mb-8">
+                <div className="divide-y divide-[#E1E1E4]">
                   {milestones.map((milestone, index) => (
                     <div
                       key={index}
-                      className="p-5 hover:bg-[#f7f9fc] transition-colors">
+                      className="p-5 hover:bg-[#F5F5F7] transition-colors"
+                    >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4">
-                          <div className="mt-1 h-6 w-6 rounded-full bg-[#4f7296] flex items-center justify-center text-white text-xs">
+                          <div className="mt-1 h-6 w-6 rounded-full bg-[#7925FF] flex items-center justify-center text-white text-xs">
                             {index + 1}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-[#0c141c]">
+                              <h4 className="font-medium">
                                 {milestone.title}
                               </h4>
                               <button
                                 onClick={() => handleRemoveMilestone(index)}
-                                className="text-[#8a9db0] hover:text-red-500 transition-colors"
-                                aria-label="Remove milestone">
+                                className="text-[#9C9AA5] hover:text-red-500 transition-colors"
+                                aria-label="Remove milestone"
+                              >
                                 <XCircle size={16} />
                               </button>
                             </div>
-                            <p className="text-sm text-[#4f7296] mt-1">
+                            <p className="text-sm text-[#9C9AA5] mt-1">
                               {milestone.date}
                             </p>
                             {milestone.description && (
-                              <p className="text-sm text-[#4f7296] mt-2 max-w-3xl">
+                              <p className="text-sm text-[#9C9AA5] mt-2 max-w-3xl">
                                 {milestone.description}
                               </p>
                             )}
                           </div>
                         </div>
-                        <div className="bg-[#f7f9fc] text-[#0c141c] text-sm font-medium px-4 py-2 rounded-full">
+                        <div className="bg-[#F5F5F7] text-[#7925FF] text-sm font-medium px-4 py-2 rounded-full">
                           ${parseFloat(milestone.amount).toLocaleString()}
                         </div>
                       </div>
@@ -448,35 +423,33 @@ const CreateJob: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-[#f7f9fc] rounded-lg border border-dashed border-[#e5e8ea] mb-8">
-                <p className="text-[#4f7296] mb-4">
-                  No milestones added yet. Break your project into manageable
-                  stages.
+              <div className="flex flex-col items-center justify-center py-8 px-4 text-center bg-[#F5F5F7] rounded-lg border border-dashed border-[#E1E1E4] mb-8">
+                <p className="text-[#9C9AA5] mb-3">
+                  No milestones added yet
                 </p>
-                <p className="text-sm text-[#8a9db0] max-w-lg">
-                  For best results, define clear deliverables for each milestone
-                  with reasonable timeframes and payment amounts.
+                <p className="text-sm text-[#9C9AA5] max-w-lg">
+                  Break your project into stages with clear deliverables, timeframes, and payment amounts
                 </p>
               </div>
             )}
 
             {/* Create Project Button */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-8">
               <button
                 onClick={handleCreateProject}
                 disabled={milestones.length === 0}
-                className={`px-8 py-3 rounded-lg font-medium text-base transition-colors 
-                  ${
-                    milestones.length === 0
-                      ? "bg-[#e5e8ea] text-[#8a9db0] cursor-not-allowed"
-                      : "bg-[#4f7296] hover:bg-[#3c5a78] text-white"
-                  }`}>
+                className={`w-full rounded-lg font-bold py-3.5 transition-colors
+                  ${milestones.length === 0
+                    ? "bg-[#E1E1E4] text-[#9C9AA5] cursor-not-allowed"
+                    : "bg-[#7925FF] hover:bg-[#6817E2] text-white"
+                  }`}
+              >
                 Create Project
               </button>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

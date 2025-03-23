@@ -72,18 +72,45 @@ const Page = () => {
     return `${clientId} - Client`;
   };
 
+  const handleCreateJob = () => {
+    router.push("/create-job");
+  };
+
   return (
     <div className="min-h-screen bg-[#f7f9fc] p-8 md:p-12 lg:p-16">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-12">
-          <h1 className="[font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-[32px] leading-10 mb-3">
-            Milestone Tracker
-          </h1>
-          <p className="[font-family:'Be_Vietnam_Pro',Helvetica] text-[#4f7296] text-lg max-w-2xl">
-            View the completion rate of your projects, check the ratings of
-            clients, and monitor your ongoing projects
-          </p>
+        {/* Header Section with Create Job Button */}
+        <div className="mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div>
+            <h1 className="[font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-[32px] leading-10 mb-3">
+              Milestone Tracker
+            </h1>
+            <p className="[font-family:'Be_Vietnam_Pro',Helvetica] text-[#4f7296] text-lg max-w-2xl">
+              View the completion rate of your projects, check the ratings of
+              clients, and monitor your ongoing projects
+            </p>
+          </div>
+          <button
+            onClick={handleCreateJob}
+            className="mt-4 sm:mt-0 bg-[#7925FF] hover:bg-[#7925FF] text-white py-3 px-6 rounded-lg [font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-sm transition-colors duration-200 flex items-center"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              className="mr-2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Create Job
+          </button>
         </div>
 
         {/* Projects Section */}
