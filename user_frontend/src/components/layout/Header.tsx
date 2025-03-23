@@ -1,7 +1,49 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
 
 const Header: React.FC = () => {
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const router = useRouter();
+  const {username,isClient} = useAuth()
+  const [role,setRole] = useState("")
+
+  useEffect(() => {
+    setRole(isClient?"client":"freelancer")
+  }, [isClient]);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        // Clear local storage
+        localStorage.removeItem("username");
+        localStorage.removeItem("isClient")
+        router.push("/login");
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  const toggleUserMenu = () => {
+    setShowUserMenu(!showUserMenu);
+  };
+
+  const getInitial = () => {
+    if (!username) return "U";
+    return username.charAt(0).toUpperCase();
+  };
+
   return (
     <div className="flex w-full items-center justify-between px-10 py-3 border-[rgba(229,232,235,1)] border-b">
       <div className="flex items-center gap-4 my-auto">
@@ -14,7 +56,7 @@ const Header: React.FC = () => {
       </div>
       <div className="self-stretch flex min-w-60 gap-8 flex-wrap flex-1 shrink basis-[0%] my-auto max-md:max-w-full ml-auto">
         <div className="flex min-w-60 min-h-10 items-center gap-9 text-sm text-[rgba(13,20,28,1)] font-medium whitespace-nowrap ml-auto">
-          <Link href="/freelancer-dashboard" className="self-stretch my-auto">
+          <Link href={role === "freelancer" ? "/freelancer-dashboard" : "/client-dashboard/milestone-tracker"} className="self-stretch my-auto">
             Dashboard
           </Link>
           <Link href="/chat" className="self-stretch my-auto">
@@ -41,11 +83,34 @@ const Header: React.FC = () => {
             </div>
           </button>
         </div>
-        <img
-          src="https://cdn.builder.io/api/v1/image/assets/TEMP/62b637a0e998ef23af08ab02b840e7e2bab13a36?placeholderIfAbsent=true"
-          className="aspect-[1] object-contain w-10 shrink-0 rounded-[20px]"
-          alt="User profile"
-        />
+        <div className="relative">
+          <button 
+            onClick={toggleUserMenu}
+            className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white font-semibold rounded-full"
+          >
+            {getInitial()}
+          </button>
+          
+          {showUserMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+              <div className="px-4 py-2 border-b border-gray-200">
+                <p className="text-sm font-medium text-gray-900">{username}</p>
+                <p className="text-xs text-gray-500 capitalize">{role}</p>
+              </div>
+              <Link href={role === "freelancer" ? "/freelancer-dashboard" : "/client-dashboard/milestone-tracker"}>
+                <div className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                  Dashboard
+                </div>
+              </Link>
+              <div 
+                onClick={handleLogout}
+                className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 cursor-pointer"
+              >
+                Logout
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
