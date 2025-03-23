@@ -125,7 +125,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         disabled={!stripe || isLoading}
         className={`w-full bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-4 py-2 rounded-md ${
           isLoading ? "opacity-70 cursor-not-allowed" : ""
-        }`}>
+        }`}
+      >
         {isLoading ? "Processing..." : `Pay $${totalAmount.toFixed(2)}`}
       </button>
     </form>
@@ -157,6 +158,30 @@ const SelectFreelancer = () => {
     const projectId = Array.isArray(params.projectId)
       ? params.projectId[0]
       : params.projectId;
+    // Fetch project details
+    const fetchProjectDetails = async (projectId: string) => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8000/project/${projectId}`
+        );
+        setProjectData(response.data);
+
+        // Calculate total amount from milestones
+        const total = response.data.milestones.reduce(
+          (sum: number, milestone: { amount: string }) =>
+            sum + parseFloat(milestone.amount || "0"),
+          0
+        );
+        setTotalAmount(total);
+
+        // Fetch freelancers
+        fetchFreelancers();
+      } catch (err) {
+        console.error("Error fetching project:", err);
+        setError("Failed to load project details");
+        setIsLoading(false);
+      }
+    };
 
     if (projectId) {
       fetchProjectDetails(projectId);
@@ -164,32 +189,7 @@ const SelectFreelancer = () => {
       setError("Project ID is missing");
       setIsLoading(false);
     }
-  }, []);
-
-  // Fetch project details
-  const fetchProjectDetails = async (projectId: string) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:8000/project/${projectId}`
-      );
-      setProjectData(response.data);
-
-      // Calculate total amount from milestones
-      const total = response.data.milestones.reduce(
-        (sum: number, milestone: { amount: string }) =>
-          sum + parseFloat(milestone.amount || "0"),
-        0
-      );
-      setTotalAmount(total);
-
-      // Fetch freelancers
-      fetchFreelancers();
-    } catch (err) {
-      console.error("Error fetching project:", err);
-      setError("Failed to load project details");
-      setIsLoading(false);
-    }
-  };
+  }, [params.projectId]);
 
   // Fetch all freelancers
   const fetchFreelancers = async () => {
@@ -286,7 +286,8 @@ const SelectFreelancer = () => {
                               item.active
                                 ? "text-[rgba(13,20,28,1)]"
                                 : "text-[rgba(79,115,150,1)] hover:text-foreground"
-                            }`}>
+                            }`}
+                          >
                             {item.label}
                           </a>
                         </li>
@@ -294,7 +295,8 @@ const SelectFreelancer = () => {
                           <li
                             role="presentation"
                             aria-hidden="true"
-                            className="mx-1 text-[rgba(79,115,150,1)]">
+                            className="mx-1 text-[rgba(79,115,150,1)]"
+                          >
                             /
                           </li>
                         )}
@@ -339,7 +341,8 @@ const SelectFreelancer = () => {
                             height="32"
                             viewBox="0 0 24 24"
                             fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
                             <path
                               d="M20 6L9 17L4 12"
                               stroke="green"
@@ -391,7 +394,8 @@ const SelectFreelancer = () => {
                                   (milestone, index) => (
                                     <div
                                       key={index}
-                                      className="mb-2 pb-2 border-b border-[rgba(229,232,235,1)] last:border-0 last:mb-0 last:pb-0">
+                                      className="mb-2 pb-2 border-b border-[rgba(229,232,235,1)] last:border-0 last:mb-0 last:pb-0"
+                                    >
                                       <div className="flex justify-between">
                                         <span className="font-medium text-[rgba(13,20,28,1)]">
                                           {milestone.description ||
@@ -461,7 +465,8 @@ const SelectFreelancer = () => {
 
                             <button
                               onClick={() => setShowPaymentForm(false)}
-                              className="mt-3 w-full bg-[rgba(229,232,235,1)] text-[rgba(13,20,28,1)] px-4 py-2 rounded-md">
+                              className="mt-3 w-full bg-[rgba(229,232,235,1)] text-[rgba(13,20,28,1)] px-4 py-2 rounded-md"
+                            >
                               Back to Freelancer Selection
                             </button>
                           </div>
@@ -488,7 +493,8 @@ const SelectFreelancer = () => {
                                     }`}
                                     onClick={() =>
                                       handleSelectFreelancer(freelancer)
-                                    }>
+                                    }
+                                  >
                                     <div className="flex items-center">
                                       <div className="w-12 h-12 bg-[rgba(79,115,150,1)] rounded-full flex items-center justify-center text-white font-bold mr-4">
                                         {freelancer.username
@@ -512,7 +518,8 @@ const SelectFreelancer = () => {
                                               height="12"
                                               viewBox="0 0 12 12"
                                               fill="none"
-                                              xmlns="http://www.w3.org/2000/svg">
+                                              xmlns="http://www.w3.org/2000/svg"
+                                            >
                                               <path
                                                 d="M10 3L4.5 8.5L2 6"
                                                 stroke="white"
@@ -535,7 +542,8 @@ const SelectFreelancer = () => {
                               <div className="mt-6 flex justify-center">
                                 <button
                                   onClick={handleContinueToPayment}
-                                  className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-8 py-3 rounded-md font-medium text-base">
+                                  className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-8 py-3 rounded-md font-medium text-base"
+                                >
                                   Continue to Payment
                                 </button>
                               </div>

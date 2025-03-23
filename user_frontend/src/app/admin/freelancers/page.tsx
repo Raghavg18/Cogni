@@ -4,7 +4,6 @@ import { Search } from "lucide-react";
 import FilterDialog from "@/components/admin/FilterDialog";
 import SortMenu, { SortOption } from "@/components/admin/SortMenu";
 import { Star, Clock, DollarSign } from "lucide-react";
-import Image from "next/image";
 
 interface Freelancer {
   id: number;
@@ -135,7 +134,7 @@ const Freelancers = () => {
             >
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16">
-                  <Image
+                  <img
                     src={freelancer.avatar}
                     alt={freelancer.name}
                     className="rounded-full object-cover"

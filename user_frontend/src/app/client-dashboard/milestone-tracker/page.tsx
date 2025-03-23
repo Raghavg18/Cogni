@@ -27,8 +27,17 @@ const Page = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const {username} = useAuth()
+  const {username, isClient} = useAuth()
   const router = useRouter()
+
+  useEffect(()=>{
+    console.log(username,isClient)
+    if(username && !isClient){
+      router.push("/freelancer-dashboard")
+    }else if(!username){
+      router.push("/login")
+    }
+  },[username,isClient,router])
   
   useEffect(() => {
     const fetchProjects = async () => {
