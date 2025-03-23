@@ -125,10 +125,6 @@ const MilestonePage = () => {
     });
   };
 
-  const handleAddMilestone = () => {
-    console.log("Add milestone clicked");
-  };
-
   const budgets = calculateBudgets();
   const progress = calculateProgress();
 
@@ -142,7 +138,7 @@ const MilestonePage = () => {
 
   return (
     <div className="bg-white">
-      <div className="bg-[rgba(247,250,252,1)] min-h-[1736px] w-full overflow-hidden max-md:max-w-full">
+      <div className="bg-[rgba(247,250,252,1)] w-full overflow-hidden max-md:max-w-full">
         <div className="w-full max-md:max-w-full">
           <div className="flex w-full justify-center flex-1 h-full px-40 py-5 max-md:max-w-full max-md:px-5">
             <div className="min-w-60 w-full max-w-[960px] overflow-hidden flex-1 shrink basis-[0%] max-md:max-w-full">
@@ -162,7 +158,6 @@ const MilestonePage = () => {
 
               <MilestoneContainer
                 milestones={milestones}
-                onAddMilestone={handleAddMilestone}
                 projectId={
                   Array.isArray(params.projectId)
                     ? params.projectId[0]

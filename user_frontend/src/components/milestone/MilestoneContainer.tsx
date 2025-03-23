@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dialog";
 import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
-import Image from "next/image";
 
 // Initialize Stripe once
 loadStripe("your_publishable_key"); // Replace with your actual publishable key
@@ -28,7 +27,7 @@ loadStripe("your_publishable_key"); // Replace with your actual publishable key
 // MilestoneContainer Component
 interface MilestoneContainerProps {
   milestones: Array<Milestone>;
-  onAddMilestone: () => void;
+  onAddMilestone?: () => void;
   projectId: string | undefined;
 }
 interface StatusProps {
@@ -52,6 +51,135 @@ interface Milestone {
   notes?: string;
 }
 
+const getStatusProps = (status: string): StatusProps => {
+  switch (status) {
+    case "paid":
+      return {
+        containerClass: "bg-green-50 border-green-200",
+        icon: <CheckCircle className="text-green-500" size={20} />,
+        showViewDetails: true,
+        showRelease: false,
+      };
+    case "submitted":
+      return {
+        containerClass: "bg-yellow-50 border-yellow-200",
+        icon: <AlertCircle className="text-yellow-500" size={20} />,
+        showViewDetails: true,
+        showRelease: true,
+      };
+    case "completed":
+      return {
+        containerClass: "bg-green-50 border-green-200",
+        icon: <CheckCircle className="text-green-500" size={20} />,
+        showViewDetails: true,
+        showRelease: false,
+      };
+    case "pending":
+    default:
+      return {
+        containerClass: "", // Keep original styling
+        icon: <Clock className="text-gray-400" size={20} />,
+        showViewDetails: false,
+        showRelease: false,
+      };
+  }
+};
+
+const MilestoneItem: React.FC<{
+  milestone: Milestone;
+  index: number;
+  onView: (m: Milestone) => void;
+}> = ({ milestone, index, onView }) => {
+  const { icon, showViewDetails, showRelease } = getStatusProps(
+    milestone.status
+  );
+
+  return (
+    <div className="bg-white rounded-xl border border-[#e5e8ea] hover:border-[#7925ff] transition-all duration-200">
+      <div className="p-6">
+        {/* Status and Amount Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex items-center gap-4">
+            <div
+              className={`w-12 h-12 rounded-full ${
+                milestone.status === "paid"
+                  ? "bg-[#beffbe]"
+                  : milestone.status === "submitted"
+                  ? "bg-[#ffeca0]"
+                  : "bg-[#f2ecff]"
+              } flex items-center justify-center`}>
+              {icon}
+            </div>
+            <div>
+              <p className="text-[#4f7296] text-sm">Milestone {index + 1}</p>
+              <h3 className="font-semibold text-[#0c141c] text-lg">
+                {milestone.description}
+              </h3>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[#4f7296] text-sm">Amount</p>
+            <p className="text-lg font-semibold text-[#0c141c]">
+              ${milestone.amount?.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress Details */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <p className="text-[#4f7296] text-sm mb-1">Status</p>
+            <p
+              className={`font-medium ${
+                milestone.status === "paid"
+                  ? "text-[#34b233]"
+                  : milestone.status === "submitted"
+                  ? "text-[#f59e0b]"
+                  : "text-[#4f7296]"
+              }`}>
+              {milestone.status.charAt(0).toUpperCase() +
+                milestone.status.slice(1)}
+            </p>
+          </div>
+          <div>
+            <p className="text-[#4f7296] text-sm mb-1">Due Date</p>
+            <p className="font-medium text-[#0c141c]">
+              {milestone.date
+                ? new Date(milestone.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Not specified"}
+            </p>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        {(showViewDetails || showRelease) && (
+          <div className="flex gap-3">
+            {showViewDetails && (
+              <button
+                onClick={() => onView(milestone)}
+                className="flex-1 px-4 py-2.5 border border-[#e5e8ea] rounded-xl text-[#4f7296] hover:bg-[#f7f9fc] transition-colors text-sm font-medium">
+                View Details
+              </button>
+            )}
+            {showRelease && (
+              <button
+                onClick={() => onView(milestone)}
+                className="flex-1 px-4 py-2.5 bg-[#7925ff] hover:bg-[#6a1ff0] text-white rounded-xl transition-colors text-sm font-medium">
+                Release Payment
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Update the Dialog content styling
 const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   milestones = [],
   onAddMilestone,
@@ -64,42 +192,6 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   const [releaseSuccess, setReleaseSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const processingAction = false;
-
-  // Function to determine status-based styling and icons
-
-  const getStatusProps = (status: string): StatusProps => {
-    switch (status) {
-      case "paid":
-        return {
-          containerClass: "bg-green-50 border-green-200",
-          icon: <CheckCircle className="text-green-500" size={20} />,
-          showViewDetails: true,
-          showRelease: false,
-        };
-      case "submitted":
-        return {
-          containerClass: "bg-yellow-50 border-yellow-200",
-          icon: <AlertCircle className="text-yellow-500" size={20} />,
-          showViewDetails: true,
-          showRelease: true,
-        };
-      case "completed":
-        return {
-          containerClass: "bg-green-50 border-green-200",
-          icon: <CheckCircle className="text-green-500" size={20} />,
-          showViewDetails: true,
-          showRelease: false,
-        };
-      case "pending":
-      default:
-        return {
-          containerClass: "", // Keep original styling
-          icon: <Clock className="text-gray-400" size={20} />,
-          showViewDetails: false,
-          showRelease: false,
-        };
-    }
-  };
 
   const handleViewDetails = (milestone: Milestone): void => {
     setSelectedMilestone(milestone);
@@ -148,86 +240,62 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 mt-6">
+    <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">Milestones</h2>
-        <Button
-          onClick={onAddMilestone}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-          size="sm">
-          <Plus size={16} className="mr-1" />
-          Add Milestone
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        {milestones.length > 0 ? (
-          milestones.map((milestone, index) => {
-            const { containerClass, icon, showViewDetails, showRelease } =
-              getStatusProps(milestone.status);
-
-            return (
-              <div
-                key={milestone._id || index}
-                className={`p-4 rounded-lg border ${containerClass}`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      {icon}
-                      <h3 className="font-medium text-gray-800">
-                        {milestone.description || `Milestone ${index + 1}`}
-                      </h3>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {milestone.date
-                        ? new Date(milestone.date).toLocaleDateString("en-US", {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : "No date specified"}
-                    </p>
-                    <p className="text-sm font-medium text-gray-700 mt-2">
-                      ${milestone.amount || 0}
-                    </p>
-                  </div>
-
-                  {/* Conditionally render buttons based on status */}
-                  {(showViewDetails || showRelease) && (
-                    <div className="flex gap-2">
-                      {showViewDetails && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(milestone)}>
-                          View Details
-                        </Button>
-                      )}
-
-                      {showRelease && (
-                        <Button
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                          size="sm"
-                          onClick={() => handleViewDetails(milestone)}>
-                          Release
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <p className="text-gray-500 text-center py-6">
-            No milestones added yet. Click &quote;Add Milestone&quote; to create
-            your first milestone.
+        <div>
+          <h2 className="text-2xl font-bold text-[#0c141c]">
+            Project Milestones
+          </h2>
+          <p className="text-[#4f7296] mt-1">
+            Track and manage your project deliverables
           </p>
+        </div>
+        {onAddMilestone && (
+          <Button
+            onClick={onAddMilestone}
+            className="bg-[#7925ff] hover:bg-[#6a1ff0] text-white px-6 py-2.5 rounded-xl font-medium transition-colors">
+            <Plus size={18} className="mr-2" />
+            Add Milestone
+          </Button>
         )}
       </div>
 
-      {/* Details Dialog */}
-      {/* Details Dialog with Improved Scrolling and Image Handling */}
+      {/* Milestones Grid */}
+      <div className="grid grid-cols-1 gap-4">
+        {milestones.length > 0 ? (
+          milestones.map((milestone, index) => (
+            <MilestoneItem
+              key={milestone._id || index}
+              milestone={milestone}
+              index={index}
+              onView={handleViewDetails}
+            />
+          ))
+        ) : (
+          <div className="text-center py-16 bg-white rounded-xl border border-[#e5e8ea]">
+            <div className="max-w-sm mx-auto">
+              <Clock className="w-12 h-12 text-[#4f7296] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[#0c141c] mb-2">
+                No Milestones Yet
+              </h3>
+              <p className="text-[#4f7296] mb-6">
+                Get started by adding your first project milestone
+              </p>
+              {onAddMilestone && (
+                <Button
+                  onClick={onAddMilestone}
+                  className="bg-[#7925ff] hover:bg-[#6a1ff0] text-white px-6 py-2.5 rounded-xl font-medium transition-colors">
+                  <Plus size={18} className="mr-2" />
+                  Add First Milestone
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="sticky top-0 bg-white z-10 pb-2">
@@ -374,14 +442,13 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
                               className="group relative border rounded-lg overflow-hidden shadow-sm bg-white">
                               {/* Image container with fixed height and proper handling */}
                               <div className="relative w-full h-full aspect-video bg-gray-100 flex items-center justify-center">
-                                <Image
+                                <img
                                   src={
                                     typeof screenshot === "string"
                                       ? screenshot
                                       : ""
                                   }
                                   alt={`Screenshot ${Number(idx) + 1}`}
-                                  fill
                                   loading="lazy"
                                   onClick={() =>
                                     window.open(screenshot, "_blank")
@@ -458,6 +525,31 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Help Section - Moved to bottom */}
+      <div className="mt-12 bg-[#f7f9fc] border border-[#f0f0f5] rounded-xl p-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-[#fff5cc] p-3 rounded-full">
+              <AlertCircle className="w-6 h-6 text-[#f59e0b]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-[#0d141c] mb-1">
+                Need Help with Your Project?
+              </h3>
+              <p className="text-[#4f7296]">
+                Contact our support team for assistance with your milestones
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => (window.location.href = "mailto:support@cogni.com")}
+            className="whitespace-nowrap bg-white text-[#7925ff] border border-[#7925ff] px-6 py-3 rounded-lg font-medium hover:bg-[#7925ff] hover:text-white transition-colors">
+            Contact Support
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
