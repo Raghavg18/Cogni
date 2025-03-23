@@ -123,21 +123,25 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, username: user.username },
       JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "7d" },
     );
 
     // Modified cookie settings for deployment
     res.cookie("uuid", token, {
       httpOnly: true,
       secure: true, // Only use secure in production
-      sameSite: 'lax', // Use 'none' in production for cross-site
-      path: '/',
+      sameSite: "none", // Use 'none' in production for cross-site
+      path: "/",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
     });
-    
+
     res
       .status(200)
-      .json({ message: "Login successful", username: user.username, role: user.role });
+      .json({
+        message: "Login successful",
+        username: user.username,
+        role: user.role,
+      });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
