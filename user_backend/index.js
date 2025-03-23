@@ -274,8 +274,8 @@ app.post("/connect-stripe", async (req, res) => {
         // Create an account link for completing verification
         const accountLink = await stripe.accountLinks.create({
           account: user.stripeAccountId,
-          refresh_url: `http://localhost:3000/stripe-refresh?username=${username}`,
-          return_url: `http://localhost:3000/stripe-return?username=${username}`,
+          refresh_url: `http://cogni-gamma.vercel.app/stripe-refresh?username=${username}`,
+          return_url: `http://cogni-gamma.vercel.app/stripe-return?username=${username}`,
           type: "account_onboarding",
         });
 
@@ -301,8 +301,8 @@ app.post("/connect-stripe", async (req, res) => {
     // Create an account link for the user to complete setup
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: `http://localhost:3000/stripe-refresh?username=${username}`,
-      return_url: `http://localhost:3000/onboarding`,
+      refresh_url: `http://cogni-gamma.vercel.app/stripe-refresh?username=${username}`,
+      return_url: `http://cogni-gamma.vercel.app/onboarding`,
       type: "account_onboarding",
     });
 
@@ -465,8 +465,8 @@ app.post("/release-payment", async (req, res) => {
       // Create an account link for the freelancer to complete setup
       const accountLink = await stripe.accountLinks.create({
         account: freelancer.stripeAccountId,
-        refresh_url: `http://localhost:3000/stripe-refresh?milestoneId=${milestoneId}`,
-        return_url: `http://localhost:3000/stripe-return?milestoneId=${milestoneId}`,
+        refresh_url: `http://cogni-gamma.vercel.app/stripe-refresh?milestoneId=${milestoneId}`,
+        return_url: `http://cogni-gamma.vercel.app/stripe-return?milestoneId=${milestoneId}`,
         type: "account_onboarding",
       });
 
