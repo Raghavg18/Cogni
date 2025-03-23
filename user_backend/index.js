@@ -131,8 +131,8 @@ app.post("/login", async (req, res) => {
       httpOnly: true,
       secure: true, // Only use secure in production
       sameSite: 'lax', // Use 'none' in production for cross-site
-      maxAge: 3600000, // 1 hour in milliseconds
-      path: '/'
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days in milliseconds
     });
     
     res
