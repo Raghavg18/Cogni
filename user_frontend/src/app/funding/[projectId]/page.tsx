@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
-import PageTitle from "@/components/jobs/PageTitle";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { loadStripe } from "@stripe/stripe-js";
@@ -11,6 +10,8 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import Link from "next/link";
+import { Check } from "lucide-react";
 
 // Initialize Stripe
 const stripePromise = loadStripe(
@@ -89,24 +90,25 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-[rgba(13,20,28,1)] mb-2">
+    <form onSubmit={handleSubmit} className="mt-4 w-full flex flex-col gap-6">
+      <div>
+        <label htmlFor="card-element" className="block text-sm font-medium mb-2">
           Card Details
         </label>
-        <div className="p-3 border border-[rgba(229,232,235,1)] rounded-md">
+        <div className="h-12 border border-[#465FF166] rounded-lg p-4 focus-within:border-2 focus-within:border-[#7925FF]">
           <CardElement
+            id="card-element"
             options={{
               style: {
                 base: {
                   fontSize: "16px",
                   color: "#424770",
                   "::placeholder": {
-                    color: "#aab7c4",
+                    color: "#9C9AA5",
                   },
                 },
                 invalid: {
-                  color: "#9e2146",
+                  color: "#EF4444",
                 },
               },
             }}
@@ -115,7 +117,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       </div>
 
       {error && (
-        <div className="text-red-600 mb-4 p-2 bg-red-50 rounded-md border border-red-200">
+        <div className="text-red-600 px-4 py-3 bg-red-50 rounded-lg border border-red-200">
           {error}
         </div>
       )}
@@ -123,7 +125,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       <button
         type="submit"
         disabled={!stripe || isLoading}
-        className={`w-full bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-4 py-2 rounded-md ${
+        className={`w-full rounded-lg bg-[#7925FF] font-bold text-white py-3.5 hover:bg-[#6315e0] transition-colors ${
           isLoading ? "opacity-70 cursor-not-allowed" : ""
         }`}
       >
@@ -136,8 +138,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 const SelectFreelancer = () => {
   const router = useRouter();
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
-  const [selectedFreelancer, setSelectedFreelancer] =
-    useState<Freelancer | null>(null);
+  const [selectedFreelancer, setSelectedFreelancer] = useState<Freelancer | null>(null);
+  
   interface Project {
     project: {
       _id: string;
@@ -154,6 +156,7 @@ const SelectFreelancer = () => {
   const [paymentIntentId, setPaymentIntentId] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const params = useParams();
+  
   useEffect(() => {
     const projectId = Array.isArray(params.projectId)
       ? params.projectId[0]
@@ -268,297 +271,266 @@ const SelectFreelancer = () => {
   ];
 
   return (
-    <div className="bg-white">
-      <div className="bg-[rgba(247,250,252,1)] min-h-[800px] w-full overflow-hidden max-md:max-w-full">
-        <div className="w-full max-md:max-w-full">
-          <Header />
-          <main className="flex w-full justify-center flex-1 h-full px-4 md:px-8 lg:px-40 py-5 max-md:max-w-full">
-            <div className="flex min-w-60 w-full max-w-[960px] flex-col overflow-hidden items-stretch flex-1 shrink basis-[0%] max-md:max-w-full">
-              <div className="bg-white rounded-lg shadow-sm mt-6 p-3">
-                <nav className="flex p-4">
-                  <ol className="flex flex-wrap items-center gap-2 text-base">
-                    {breadcrumbItems.map((item, index) => (
-                      <React.Fragment key={index}>
-                        <li className="inline-flex items-center">
-                          <a
-                            href={item.href}
-                            className={`transition-colors ${
-                              item.active
-                                ? "text-[rgba(13,20,28,1)]"
-                                : "text-[rgba(79,115,150,1)] hover:text-foreground"
-                            }`}
-                          >
-                            {item.label}
-                          </a>
-                        </li>
-                        {index < breadcrumbItems.length - 1 && (
-                          <li
-                            role="presentation"
-                            aria-hidden="true"
-                            className="mx-1 text-[rgba(79,115,150,1)]"
-                          >
-                            /
-                          </li>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </ol>
-                </nav>
+    <div className="bg-[#F8F8FA] min-h-screen">
+      <Header />
+      <main className="flex justify-center px-4 py-6 md:py-12">
+        <div className="w-full max-w-[800px]">
+          {/* Breadcrumbs */}
+          <nav className="mb-6">
+            <ol className="flex flex-wrap items-center gap-2 text-sm">
+              {breadcrumbItems.map((item, index) => (
+                <React.Fragment key={index}>
+                  <li className="inline-flex items-center">
+                    <Link
+                      href={item.href || ''}
+                      className={`transition-colors ${
+                        item.active
+                          ? "text-black font-medium"
+                          : "text-[#9C9AA5] hover:text-[#7925FF]"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                  {index < breadcrumbItems.length - 1 && (
+                    <li
+                      role="presentation"
+                      aria-hidden="true"
+                      className="mx-1 text-[#9C9AA5]"
+                    >
+                      /
+                    </li>
+                  )}
+                </React.Fragment>
+              ))}
+            </ol>
+          </nav>
 
-                <PageTitle
-                  title={
-                    paymentSuccess ? "Payment Successful" : "Select Freelancer"
-                  }
-                  actionLabel={
-                    !paymentSuccess && !showPaymentForm && selectedFreelancer
-                      ? "Continue to Payment"
-                      : ""
-                  }
-                  onAction={handleContinueToPayment}
-                />
+          <div className="bg-white rounded-xl shadow-sm p-6 md:p-8">
+            {/* Title */}
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-2xl font-bold">
+                {paymentSuccess ? "Payment Successful" : showPaymentForm ? "Payment Details" : "Select Freelancer"}
+              </h1>
+              
+              {!paymentSuccess && !showPaymentForm && selectedFreelancer && (
+                <button
+                  onClick={handleContinueToPayment}
+                  className="bg-[#7925FF] hover:bg-[#6315e0] text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                >
+                  Continue to Payment
+                </button>
+              )}
+            </div>
 
-                {/* Error display */}
-                {error && (
-                  <div className="mx-6 mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600">
-                    {error}
-                  </div>
-                )}
+            {/* Error display */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+                {error}
+              </div>
+            )}
 
-                {/* Loading state */}
-                {isLoading ? (
-                  <div className="px-6 py-8 text-center">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[rgba(79,115,150,1)] border-r-transparent"></div>
-                    <p className="mt-2 text-[rgba(79,115,150,1)]">Loading...</p>
+            {/* Loading state */}
+            {isLoading ? (
+              <div className="py-12 text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#7925FF] border-r-transparent"></div>
+                <p className="mt-4 text-[#9C9AA5]">Loading...</p>
+              </div>
+            ) : (
+              <>
+                {/* Payment Success View */}
+                {paymentSuccess ? (
+                  <div className="py-8 text-center">
+                    <div className="w-16 h-16 bg-[#E0D7FF] rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Check className="text-[#7925FF] h-8 w-8" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-4">
+                      Payment Successful!
+                    </h3>
+                    <p className="text-[#494652] mb-4">
+                      Your payment of ${totalAmount.toFixed(2)} has been
+                      processed successfully.
+                    </p>
+                    <p className="text-[#494652] mb-4">
+                      You have assigned{" "}
+                      <span className="font-semibold">
+                        {selectedFreelancer?.username}
+                      </span>{" "}
+                      to your project.
+                    </p>
+                    <p className="text-sm text-[#9C9AA5]">
+                      Payment ID: {paymentIntentId}
+                    </p>
+                    <p className="mt-6 text-[#9C9AA5]">
+                      Redirecting to project dashboard...
+                    </p>
                   </div>
                 ) : (
                   <>
-                    {/* Payment Success View */}
-                    {paymentSuccess ? (
-                      <div className="px-6 py-8 text-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg
-                            width="32"
-                            height="32"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M20 6L9 17L4 12"
-                              stroke="green"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </div>
-                        <h3 className="text-xl font-bold text-[rgba(13,20,28,1)] mb-2">
-                          Payment Successful!
+                    {/* Project Summary */}
+                    {projectData && (
+                      <div className="mb-8 pb-6 border-b border-[#E1E1E4]">
+                        <h3 className="text-lg font-medium mb-4">
+                          Project Summary
                         </h3>
-                        <p className="text-[rgba(79,115,150,1)] mb-4">
-                          Your payment of ${totalAmount.toFixed(2)} has been
-                          processed successfully.
+                        <p className="text-[#494652] mb-6">
+                          {projectData.project.description}
                         </p>
-                        <p className="text-[rgba(79,115,150,1)] mb-4">
-                          You have assigned{" "}
-                          <span className="font-semibold">
-                            {selectedFreelancer?.username}
-                          </span>{" "}
-                          to your project.
-                        </p>
-                        <p className="text-sm text-[rgba(79,115,150,1)]">
-                          Payment ID: {paymentIntentId}
-                        </p>
-                        <p className="mt-4 text-[rgba(79,115,150,1)]">
-                          Redirecting to project dashboard...
-                        </p>
+
+                        <div>
+                          <h4 className="text-base font-medium mb-3">
+                            Milestones
+                          </h4>
+                          <div className="bg-[#F8F8FA] p-4 rounded-lg">
+                            {projectData.milestones.map(
+                              (milestone, index) => (
+                                <div
+                                  key={index}
+                                  className="mb-3 pb-3 border-b border-[#E1E1E4] last:border-0 last:mb-0 last:pb-0"
+                                >
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">
+                                      {milestone.description ||
+                                        `Milestone ${index + 1}`}
+                                    </span>
+                                    <span className="text-[#494652]">
+                                      ${parseFloat(milestone.amount).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )
+                            )}
+                            <div className="mt-3 pt-3 border-t border-[#E1E1E4] font-semibold">
+                              <div className="flex justify-between">
+                                <span>Total</span>
+                                <span>${totalAmount.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Select Freelancer or Payment Form */}
+                    {showPaymentForm ? (
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">
+                          Payment Details
+                        </h3>
+                        <div className="bg-[#F8F8FA] p-4 rounded-lg mb-6">
+                          <div className="flex items-center mb-4">
+                            <div className="w-10 h-10 bg-[#7925FF] rounded-full flex items-center justify-center text-white font-bold mr-3">
+                              {selectedFreelancer?.username
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-medium">
+                                {selectedFreelancer?.username}
+                              </h4>
+                              <p className="text-sm text-[#9C9AA5]">
+                                Freelancer
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-[#494652] text-sm mb-2">
+                            You are about to fund the escrow account for
+                            this project.
+                          </p>
+                          <p className="text-[#494652] text-sm">
+                            The total amount of ${totalAmount.toFixed(2)}{" "}
+                            will be held in escrow until you approve each
+                            milestone.
+                          </p>
+                        </div>
+
+                        <Elements stripe={stripePromise}>
+                          <PaymentForm
+                            projectId={projectData?.project._id || ""}
+                            totalAmount={totalAmount}
+                            onSuccess={handlePaymentSuccess}
+                          />
+                        </Elements>
+
+                        <button
+                          onClick={() => setShowPaymentForm(false)}
+                          className="mt-4 w-full bg-[#F8F8FA] text-[#494652] px-4 py-3 rounded-lg border border-[#E1E1E4] hover:bg-[#E1E1E4] transition-colors"
+                        >
+                          Back to Freelancer Selection
+                        </button>
                       </div>
                     ) : (
-                      <>
-                        {/* Project Summary */}
-                        {projectData && (
-                          <div className="px-6 py-4 border-b border-[rgba(229,232,235,1)]">
-                            <h3 className="text-lg font-semibold text-[rgba(13,20,28,1)] mb-2">
-                              Project Summary
-                            </h3>
-                            <p className="text-[rgba(79,115,150,1)] mb-4">
-                              {projectData.project.description}
-                            </p>
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">
+                          Available Freelancers
+                        </h3>
 
-                            <div className="mb-4">
-                              <h4 className="text-md font-medium text-[rgba(13,20,28,1)] mb-2">
-                                Milestones
-                              </h4>
-                              <div className="bg-[rgba(247,250,252,1)] p-3 rounded-md">
-                                {projectData.milestones.map(
-                                  (milestone, index) => (
-                                    <div
-                                      key={index}
-                                      className="mb-2 pb-2 border-b border-[rgba(229,232,235,1)] last:border-0 last:mb-0 last:pb-0"
-                                    >
-                                      <div className="flex justify-between">
-                                        <span className="font-medium text-[rgba(13,20,28,1)]">
-                                          {milestone.description ||
-                                            `Milestone ${index + 1}`}
-                                        </span>
-                                        <span className="text-[rgba(79,115,150,1)]">
-                                          $
-                                          {parseFloat(milestone.amount).toFixed(
-                                            2
-                                          )}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )
-                                )}
-                                <div className="mt-2 pt-2 border-t border-[rgba(229,232,235,1)] font-semibold">
-                                  <div className="flex justify-between">
-                                    <span>Total</span>
-                                    <span>${totalAmount.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Select Freelancer or Payment Form */}
-                        {showPaymentForm ? (
-                          <div className="px-6 py-4">
-                            <h3 className="text-lg font-semibold text-[rgba(13,20,28,1)] mb-4">
-                              Payment Details
-                            </h3>
-                            <div className="bg-[rgba(247,250,252,1)] p-4 rounded-md mb-4">
-                              <div className="flex items-center mb-4">
-                                <div className="w-10 h-10 bg-[rgba(79,115,150,1)] rounded-full flex items-center justify-center text-white font-bold mr-3">
-                                  {selectedFreelancer?.username
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-                                <div>
-                                  <h4 className="font-medium text-[rgba(13,20,28,1)]">
-                                    {selectedFreelancer?.username}
-                                  </h4>
-                                  <p className="text-sm text-[rgba(79,115,150,1)]">
-                                    Freelancer
-                                  </p>
-                                </div>
-                              </div>
-                              <p className="text-[rgba(79,115,150,1)] text-sm mb-2">
-                                You are about to fund the escrow account for
-                                this project.
-                              </p>
-                              <p className="text-[rgba(79,115,150,1)] text-sm mb-2">
-                                The total amount of ${totalAmount.toFixed(2)}{" "}
-                                will be held in escrow until you approve each
-                                milestone.
-                              </p>
-                            </div>
-
-                            <Elements stripe={stripePromise}>
-                              <PaymentForm
-                                projectId={projectData?.project._id || ""}
-                                totalAmount={totalAmount}
-                                onSuccess={handlePaymentSuccess}
-                              />
-                            </Elements>
-
-                            <button
-                              onClick={() => setShowPaymentForm(false)}
-                              className="mt-3 w-full bg-[rgba(229,232,235,1)] text-[rgba(13,20,28,1)] px-4 py-2 rounded-md"
-                            >
-                              Back to Freelancer Selection
-                            </button>
+                        {freelancers.length === 0 ? (
+                          <div className="text-center py-8 text-[#9C9AA5]">
+                            No freelancers available at the moment.
                           </div>
                         ) : (
-                          <div className="px-6 py-4">
-                            <h3 className="text-lg font-semibold text-[rgba(13,20,28,1)] mb-4">
-                              Available Freelancers
-                            </h3>
-
-                            {freelancers.length === 0 ? (
-                              <div className="text-center py-8 text-[rgba(79,115,150,1)]">
-                                No freelancers available at the moment.
-                              </div>
-                            ) : (
-                              <div className="grid gap-4">
-                                {freelancers.map((freelancer) => (
-                                  <div
-                                    key={freelancer._id}
-                                    className={`p-4 border rounded-md cursor-pointer transition-all ${
-                                      selectedFreelancer &&
-                                      selectedFreelancer._id === freelancer._id
-                                        ? "border-[rgba(79,115,150,1)] bg-[rgba(247,250,252,1)]"
-                                        : "border-[rgba(229,232,235,1)] hover:border-[rgba(79,115,150,1)]"
-                                    }`}
-                                    onClick={() =>
-                                      handleSelectFreelancer(freelancer)
-                                    }
-                                  >
-                                    <div className="flex items-center">
-                                      <div className="w-12 h-12 bg-[rgba(79,115,150,1)] rounded-full flex items-center justify-center text-white font-bold mr-4">
-                                        {freelancer.username
-                                          .charAt(0)
-                                          .toUpperCase()}
-                                      </div>
-                                      <div>
-                                        <h4 className="font-medium text-[rgba(13,20,28,1)]">
-                                          {freelancer.username}
-                                        </h4>
-                                        <p className="text-sm text-[rgba(79,115,150,1)]">
-                                          Freelancer
-                                        </p>
-                                      </div>
-                                      {selectedFreelancer?._id ===
-                                        freelancer._id && (
-                                        <div className="ml-auto">
-                                          <div className="w-6 h-6 bg-[rgba(79,115,150,1)] rounded-full flex items-center justify-center">
-                                            <svg
-                                              width="12"
-                                              height="12"
-                                              viewBox="0 0 12 12"
-                                              fill="none"
-                                              xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                              <path
-                                                d="M10 3L4.5 8.5L2 6"
-                                                stroke="white"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                              />
-                                            </svg>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                    {/* You can add more details about the freelancer here if needed */}
+                          <div className="grid gap-3">
+                            {freelancers.map((freelancer) => (
+                              <div
+                                key={freelancer._id}
+                                className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                                  selectedFreelancer &&
+                                  selectedFreelancer._id === freelancer._id
+                                    ? "border-[#7925FF] bg-[#F8F8FA]"
+                                    : "border-[#E1E1E4] hover:border-[#7925FF]"
+                                }`}
+                                onClick={() =>
+                                  handleSelectFreelancer(freelancer)
+                                }
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-12 h-12 bg-[#7925FF] rounded-full flex items-center justify-center text-white font-bold mr-4">
+                                    {freelancer.username
+                                      .charAt(0)
+                                      .toUpperCase()}
                                   </div>
-                                ))}
+                                  <div>
+                                    <h4 className="font-medium">
+                                      {freelancer.username}
+                                    </h4>
+                                    <p className="text-sm text-[#9C9AA5]">
+                                      Freelancer
+                                    </p>
+                                  </div>
+                                  {selectedFreelancer?._id ===
+                                    freelancer._id && (
+                                    <div className="ml-auto">
+                                      <div className="w-6 h-6 bg-[#7925FF] rounded-full flex items-center justify-center">
+                                        <Check className="text-white h-3 w-3" />
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            )}
-
-                            {selectedFreelancer && (
-                              <div className="mt-6 flex justify-center">
-                                <button
-                                  onClick={handleContinueToPayment}
-                                  className="bg-[rgba(79,115,150,1)] hover:bg-[rgba(60,90,120,1)] text-white px-8 py-3 rounded-md font-medium text-base"
-                                >
-                                  Continue to Payment
-                                </button>
-                              </div>
-                            )}
+                            ))}
                           </div>
                         )}
-                      </>
+
+                        {selectedFreelancer && (
+                          <div className="mt-8 flex justify-center">
+                            <button
+                              onClick={handleContinueToPayment}
+                              className="bg-[#7925FF] hover:bg-[#6315e0] text-white px-8 py-3.5 rounded-lg font-bold text-base transition-colors"
+                            >
+                              Continue to Payment
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </>
                 )}
-              </div>
-            </div>
-          </main>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
