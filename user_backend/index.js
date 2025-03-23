@@ -211,12 +211,12 @@ app.post("/connect-stripe", async (req, res) => {
 });
 
 app.post("/create-project", async (req, res) => {
-  const { name, description, clientName, milestones, freelancerId } = req.body;
+  const { name, description, clientId, milestones, freelancerId } = req.body;
 
   const project = await Project.create({
     name,
     description,
-    clientId: clientName,
+    clientId,
     totalAmount: 0,
     freelancerId
   });
