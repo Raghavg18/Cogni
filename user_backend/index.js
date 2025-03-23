@@ -7,10 +7,11 @@ import cors from "cors";
 import { verify } from "./middlewares/verify.middleware.js";
 import { User, Project, Milestone } from "./models/user.model.js";
 import Stripe from "stripe";
-import {v2 as cloudinary} from "cloudinary"
-import {CloudinaryStorage} from "multer-storage-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Dispute } from "./models/dispute.model.js";
 
 const app = express();
 const PORT = 8000;
@@ -34,33 +35,32 @@ app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
 
 cloudinary.config({
-  cloud_name: 'dyxsai3xf',
-  api_key: '999174425217381',
-  api_secret: 'XUbcCldIRmIFUj7xakQQEUT1HMI'
+  cloud_name: "dyxsai3xf",
+  api_key: "999174425217381",
+  api_secret: "XUbcCldIRmIFUj7xakQQEUT1HMI",
 });
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'milestones',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'gif'],
-    transformation: [{ width: 1000, crop: "limit" }] // Optional: resize large images
-  }
+    folder: "milestones",
+    allowed_formats: ["jpg", "jpeg", "png", "pdf", "gif"],
+    transformation: [{ width: 1000, crop: "limit" }], // Optional: resize large images
+  },
 });
 
 // Initialize multer with Cloudinary storage
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
-  }
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
 });
-
 
 // Signup Route
 app.post("/signup", async (req, res) => {
@@ -105,7 +105,7 @@ app.post("/login", async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: "User does not exist" });
 
-    const isPasswordCorrect = bcrypt.compare(password, user.password,);
+    const isPasswordCorrect = bcrypt.compare(password, user.password);
     if (!isPasswordCorrect)
       return res.status(403).json({ message: "Invalid password" });
 
@@ -120,9 +120,11 @@ app.post("/login", async (req, res) => {
       secure: true,
       sameSite: "strict",
     });
-    res
-      .status(200)
-      .json({ message: "Login successful", username: user.username, role: user.role });
+    res.status(200).json({
+      message: "Login successful",
+      username: user.username,
+      role: user.role,
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
@@ -131,6 +133,104 @@ app.post("/login", async (req, res) => {
 
 app.get("/", verify, (req, res) => {
   res.status(200).json({ user: req.user });
+});
+
+app.post("/disputes", async (req, res) => {
+  try {
+    const { disputeTitle, disputeAmount } = req.body;
+
+    console.log("Dispute data:", req.body);
+
+    if (!disputeTitle || !disputeAmount) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const newDispute = new Dispute({
+      disputeTitle,
+      disputeAmount,
+    });
+
+    await newDispute.save();
+    res.status(201).json(newDispute);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating dispute" });
+  }
+});
+
+app.get("/disputes", async (req, res) => {
+  try {
+    const { clientName, freelancerName, status } = req.query;
+
+    let filter = {};
+
+    if (clientName) filter.clientName = clientName;
+    if (freelancerName) filter.freelancerName = freelancerName;
+    if (status) filter.status = status;
+
+    const disputes = await Dispute.find(filter).sort({ createdAt: -1 });
+
+    res.status(200).json(disputes);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching disputes", error });
+  }
+});
+
+/**
+ * ✅ API: Fetch a Specific Dispute by ID
+ */
+app.get("/disputes/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const dispute = await Dispute.findById(id);
+
+    if (!dispute) {
+      return res.status(404).json({ message: "Dispute not found" });
+    }
+
+    res.status(200).json(dispute);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching dispute", error });
+  }
+});
+
+app.patch("/disputes/:id/resolve", async (req, res) => {
+  try {
+    console.log("REQ PARAMS:", req.params);
+    const { id } = req.params;
+    const dispute = await Dispute.findByIdAndUpdate(
+      id,
+      { status: "accepted" },
+      { new: true }
+    );
+
+    console.log("DIspute: ", dispute);
+
+    if (!dispute) {
+      return res.status(404).json({ message: "Dispute not found" });
+    }
+
+    res.json({ message: "Dispute resolved successfully", dispute });
+  } catch (error) {
+    res.status(500).json({ message: "Error resolving dispute", error });
+  }
+});
+
+app.patch("/disputes/:id/reject", async (req, res) => {
+  try {
+    const dispute = await Dispute.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected" },
+      { new: true }
+    );
+
+    if (!dispute) {
+      return res.status(404).json({ message: "Dispute not found" });
+    }
+
+    res.json({ message: "Dispute rejected successfully", dispute });
+  } catch (error) {
+    res.status(500).json({ message: "Error rejecting dispute", error });
+  }
 });
 
 app.post("/connect-stripe", async (req, res) => {
@@ -147,12 +247,12 @@ app.post("/connect-stripe", async (req, res) => {
       message: "Only freelancers can connect to Stripe",
     });
   }
-  
+
   try {
     if (user.stripeAccountId) {
       // Check if the account has transfers capability
       const account = await stripe.accounts.retrieve(user.stripeAccountId);
-      
+
       if (account.capabilities && account.capabilities.transfers === "active") {
         return res.json({
           success: true,
@@ -165,17 +265,17 @@ app.post("/connect-stripe", async (req, res) => {
           account: user.stripeAccountId,
           refresh_url: `http://localhost:3000/stripe-refresh?username=${username}`,
           return_url: `http://localhost:3000/stripe-return?username=${username}`,
-          type: 'account_onboarding',
+          type: "account_onboarding",
         });
-        
-        return res.json({ 
-          success: true, 
+
+        return res.json({
+          success: true,
           message: "Account needs to complete transfers setup",
-          accountLink: accountLink.url 
+          accountLink: accountLink.url,
         });
       }
     }
-    
+
     // Create a new account with transfers capability
     const account = await stripe.accounts.create({
       type: "express",
@@ -183,29 +283,29 @@ app.post("/connect-stripe", async (req, res) => {
         transfers: { requested: true },
       },
     });
-    
+
     user.stripeAccountId = account.id;
     await user.save();
-    
+
     // Create an account link for the user to complete setup
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
       refresh_url: `http://localhost:3000/stripe-refresh?username=${username}`,
       return_url: `http://localhost:3000/onboarding`,
-      type: 'account_onboarding',
+      type: "account_onboarding",
     });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       stripeAccountId: account.id,
-      accountLink: accountLink.url
+      accountLink: accountLink.url,
     });
   } catch (error) {
     console.error("Stripe connection error:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Failed to connect to Stripe",
-      error: error.message 
+      error: error.message,
     });
   }
 });
@@ -218,7 +318,7 @@ app.post("/create-project", async (req, res) => {
     description,
     clientId,
     totalAmount: 0,
-    freelancerId
+    freelancerId,
   });
 
   for (let milestone of milestones) {
@@ -252,7 +352,7 @@ app.post("/fund-escrow", async (req, res) => {
     },
     description: `Escrow funding for Project: ${project.name}`,
   });
-  
+
   await Milestone.updateMany(
     { projectId: projectId, status: "pending" },
     { $set: { paymentIntentId: paymentIntent.id } }
@@ -262,59 +362,58 @@ app.post("/fund-escrow", async (req, res) => {
   res.json({ success: true, paymentIntentId: paymentIntent.id });
 });
 
-app.post("/submit-milestone", upload.array('images', 10), async (req, res) => {
+app.post("/submit-milestone", upload.array("images", 10), async (req, res) => {
   try {
-    console.log('Request body:', req.body);
-    console.log('Files received:', req.files?.length || 0);
-    
-    const { milestoneId, repositoryUrl, hostingUrl, externalFiles, notes } = req.body;
-    
+    console.log("Request body:", req.body);
+    console.log("Files received:", req.files?.length || 0);
+
+    const { milestoneId, repositoryUrl, hostingUrl, externalFiles, notes } =
+      req.body;
+
     if (!milestoneId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Missing milestone ID" 
+      return res.status(400).json({
+        success: false,
+        message: "Missing milestone ID",
       });
     }
-    
+
     // Extract Cloudinary URLs from uploaded files
-    const imageUrls = req.files 
-      ? req.files.map(file => file.path) 
-      : [];
-    
-    console.log('Image URLs:', imageUrls);
-    
+    const imageUrls = req.files ? req.files.map((file) => file.path) : [];
+
+    console.log("Image URLs:", imageUrls);
+
     // Update the milestone in the database
     const updatedMilestone = await Milestone.findByIdAndUpdate(
-      milestoneId, 
+      milestoneId,
       {
         status: "submitted",
         repositoryUrl,
         hostingUrl,
         externalFiles,
         notes,
-        images: imageUrls
+        images: imageUrls,
       },
       { new: true } // Return the updated document
     );
-    
+
     if (!updatedMilestone) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Milestone not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Milestone not found",
       });
     }
-    
-    res.json({ 
-      success: true, 
-      message: "Milestone submitted successfully", 
-      milestone: updatedMilestone 
+
+    res.json({
+      success: true,
+      message: "Milestone submitted successfully",
+      milestone: updatedMilestone,
     });
   } catch (error) {
     console.error("Error submitting milestone:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error submitting milestone", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Error submitting milestone",
+      error: error.message,
     });
   }
 });
@@ -325,12 +424,16 @@ app.post("/release-payment", async (req, res) => {
 
     const milestone = await Milestone.findById(milestoneId);
     if (!milestone) {
-      return res.status(404).json({ success: false, message: "Milestone not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Milestone not found" });
     }
 
     const project = await Project.findById(milestone.projectId);
     if (!project) {
-      return res.status(404).json({ success: false, message: "Project not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Project not found" });
     }
 
     const freelancer = await User.findOne({ username: project.freelancerId });
@@ -340,29 +443,30 @@ app.post("/release-payment", async (req, res) => {
         message: "Freelancer Stripe account not found",
       });
     }
-    
+
     // Capture the payment from the client first
     await stripe.paymentIntents.capture(milestone.paymentIntentId);
-    
+
     // Check if the freelancer account has transfers capability
     const account = await stripe.accounts.retrieve(freelancer.stripeAccountId);
-    
+
     if (!account.capabilities || account.capabilities.transfers !== "active") {
       // Create an account link for the freelancer to complete setup
       const accountLink = await stripe.accountLinks.create({
         account: freelancer.stripeAccountId,
         refresh_url: `http://localhost:3000/stripe-refresh?milestoneId=${milestoneId}`,
         return_url: `http://localhost:3000/stripe-return?milestoneId=${milestoneId}`,
-        type: 'account_onboarding',
+        type: "account_onboarding",
       });
-      
+
       return res.status(400).json({
         success: false,
-        message: "Freelancer needs to complete Stripe account setup before receiving payments",
-        accountLink: accountLink.url
+        message:
+          "Freelancer needs to complete Stripe account setup before receiving payments",
+        accountLink: accountLink.url,
       });
     }
-    
+
     // Now create the transfer
     const transfer = await stripe.transfers.create({
       amount: milestone.amount * 100,
@@ -385,7 +489,7 @@ app.post("/release-payment", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to release payment",
-      error: error.message 
+      error: error.message,
     });
   }
 });
@@ -400,8 +504,8 @@ app.get("/project/:projectId", async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    const milestones = await Milestone.find({projectId: project._id})
-    res.status(200).json({project,milestones});
+    const milestones = await Milestone.find({ projectId: project._id });
+    res.status(200).json({ project, milestones });
   } catch (error) {
     console.error("Error fetching project:", error);
     res.status(500).json({ message: "Server error" });
@@ -469,10 +573,10 @@ app.get("/projects", verify, async (req, res) => {
   }
 });
 
-app.get("/freelancers",async (req,res)=>{
-  const freelancers = await User.find({role : "freelancer"})
-  res.status(200).json(freelancers)
-})
+app.get("/freelancers", async (req, res) => {
+  const freelancers = await User.find({ role: "freelancer" });
+  res.status(200).json(freelancers);
+});
 
 // Assign a freelancer to a project
 app.put("/project/:projectId/assign-freelancer", async (req, res) => {
@@ -481,32 +585,32 @@ app.put("/project/:projectId/assign-freelancer", async (req, res) => {
     const { freelancerId } = req.body;
 
     if (!projectId || !freelancerId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Project ID and freelancer ID are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Project ID and freelancer ID are required",
       });
     }
 
     // Find the project
     const project = await Project.findById(projectId);
-    
+
     if (!project) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Project not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
       });
     }
 
     // Verify the freelancer exists and is actually a freelancer
-    const freelancer = await User.findOne({ 
+    const freelancer = await User.findOne({
       _id: freelancerId,
-      role: "freelancer" 
+      role: "freelancer",
     });
 
     if (!freelancer) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Freelancer not found or user is not a freelancer" 
+      return res.status(404).json({
+        success: false,
+        message: "Freelancer not found or user is not a freelancer",
       });
     }
 
@@ -520,16 +624,15 @@ app.put("/project/:projectId/assign-freelancer", async (req, res) => {
       project: {
         id: project._id,
         name: project.name,
-        freelancerId: project.freelancerId
-      }
+        freelancerId: project.freelancerId,
+      },
     });
-    
   } catch (error) {
     console.error("Error assigning freelancer:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 });
@@ -541,22 +644,22 @@ app.get("/milestone/:milestoneId", async (req, res) => {
     const milestone = await Milestone.findById(milestoneId);
 
     if (!milestone) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Milestone not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Milestone not found",
       });
     }
 
     res.json({
       success: true,
-      milestone
+      milestone,
     });
   } catch (error) {
     console.error("Error fetching milestone:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 });
@@ -565,28 +668,29 @@ app.get("/check-stripe-status/:username", async (req, res) => {
   try {
     const { username } = req.params;
     const user = await User.findOne({ username });
-    
+
     if (!user || !user.stripeAccountId) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User or Stripe account not found" 
+      return res.status(404).json({
+        success: false,
+        message: "User or Stripe account not found",
       });
     }
-    
+
     const account = await stripe.accounts.retrieve(user.stripeAccountId);
-    
+
     res.json({
       success: true,
       accountId: user.stripeAccountId,
       capabilities: account.capabilities,
-      transfersEnabled: account.capabilities && account.capabilities.transfers === "active"
+      transfersEnabled:
+        account.capabilities && account.capabilities.transfers === "active",
     });
   } catch (error) {
     console.error("Error checking Stripe status:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Failed to check Stripe account status",
-      error: error.message 
+      error: error.message,
     });
   }
 });
@@ -595,57 +699,63 @@ app.get("/check-stripe-status/:username", async (req, res) => {
 app.get("/client-projects/:clientId", async (req, res) => {
   try {
     const { clientId } = req.params;
-    
+
     if (!clientId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Client ID is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Client ID is required",
       });
     }
 
     // Find all projects assigned to this freelancer
     const projects = await Project.find({ clientId });
-    
+
     // For each project, get its milestones
-    const projectsWithMilestones = await Promise.all(projects.map(async (project) => {
-      const milestones = await Milestone.find({ projectId: project._id });
-      
-      // Calculate completion percentage based on milestones
-      const totalMilestones = milestones.length;
-      const completedMilestones = milestones.filter(
-        m => m.status === "paid" || m.status === "submitted"
-      ).length;
-      
-      const completionPercentage = totalMilestones > 0 
-        ? Math.round((completedMilestones / totalMilestones) * 100) 
-        : 0;
-      
-      // Calculate total project value from milestones
-      const totalAmount = milestones.reduce((sum, milestone) => sum + milestone.amount, 0);
-      
-      return {
-        id: project._id,
-        name: project.name,
-        description: project.description,
-        clientId: project.clientId,
-        freelancerId: project.freelancerId,
-        completed: completionPercentage,
-        amount: totalAmount,
-        createdAt: project.createdAt,
-        milestones
-      };
-    }));
-    
+    const projectsWithMilestones = await Promise.all(
+      projects.map(async (project) => {
+        const milestones = await Milestone.find({ projectId: project._id });
+
+        // Calculate completion percentage based on milestones
+        const totalMilestones = milestones.length;
+        const completedMilestones = milestones.filter(
+          (m) => m.status === "paid" || m.status === "submitted"
+        ).length;
+
+        const completionPercentage =
+          totalMilestones > 0
+            ? Math.round((completedMilestones / totalMilestones) * 100)
+            : 0;
+
+        // Calculate total project value from milestones
+        const totalAmount = milestones.reduce(
+          (sum, milestone) => sum + milestone.amount,
+          0
+        );
+
+        return {
+          id: project._id,
+          name: project.name,
+          description: project.description,
+          clientId: project.clientId,
+          freelancerId: project.freelancerId,
+          completed: completionPercentage,
+          amount: totalAmount,
+          createdAt: project.createdAt,
+          milestones,
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      projects: projectsWithMilestones
+      projects: projectsWithMilestones,
     });
   } catch (error) {
     console.error("Error fetching freelancer projects:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 });
@@ -654,60 +764,63 @@ app.get("/client-projects/:clientId", async (req, res) => {
 app.get("/freelancer-projects/:freelancerId", async (req, res) => {
   try {
     const { freelancerId } = req.params;
-    
+
     if (!freelancerId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Freelancer ID is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Freelancer ID is required",
       });
     }
 
     // Find all projects assigned to this freelancer
     const projects = await Project.find({ freelancerId });
-    
+
     // For each project, get its milestones
-    const projectsWithDetails = await Promise.all(projects.map(async (project) => {
-      const milestones = await Milestone.find({ projectId: project._id });
-      
-      // Calculate completion percentage based on milestones
-      const totalMilestones = milestones.length;
-      const completedMilestones = milestones.filter(
-        m => m.status === "paid" || m.status === "submitted"
-      ).length;
-      
-      const progress = totalMilestones > 0 
-        ? Math.round((completedMilestones / totalMilestones) * 100) 
-        : 0;
-      
-      // Calculate total budget and received amount
-      const totalBudget = milestones.reduce((sum, m) => sum + m.amount, 0);
-      const receivedAmount = milestones
-        .filter(m => m.status === "paid")
-        .reduce((sum, m) => sum + m.amount, 0);
-      
-      return {
-        id: project._id.toString(),
-        title: project.name,
-        progress,
-        totalBudget,
-        receivedAmount,
-        milestones: {
-          total: totalMilestones,
-          completed: completedMilestones
-        }
-      };
-    }));
-    
+    const projectsWithDetails = await Promise.all(
+      projects.map(async (project) => {
+        const milestones = await Milestone.find({ projectId: project._id });
+
+        // Calculate completion percentage based on milestones
+        const totalMilestones = milestones.length;
+        const completedMilestones = milestones.filter(
+          (m) => m.status === "paid" || m.status === "submitted"
+        ).length;
+
+        const progress =
+          totalMilestones > 0
+            ? Math.round((completedMilestones / totalMilestones) * 100)
+            : 0;
+
+        // Calculate total budget and received amount
+        const totalBudget = milestones.reduce((sum, m) => sum + m.amount, 0);
+        const receivedAmount = milestones
+          .filter((m) => m.status === "paid")
+          .reduce((sum, m) => sum + m.amount, 0);
+
+        return {
+          id: project._id.toString(),
+          title: project.name,
+          progress,
+          totalBudget,
+          receivedAmount,
+          milestones: {
+            total: totalMilestones,
+            completed: completedMilestones,
+          },
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      projects: projectsWithDetails
+      projects: projectsWithDetails,
     });
   } catch (error) {
     console.error("Error fetching freelancer projects:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error", 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
     });
   }
 });
@@ -716,11 +829,11 @@ app.get("/freelancer-projects/:freelancerId", async (req, res) => {
 app.post("/generate-milestones", async (req, res) => {
   try {
     const { projectTitle, projectDescription, budget, timeframe } = req.body;
-    
+
     if (!projectDescription) {
       return res.status(400).json({
         success: false,
-        message: "Project description is required"
+        message: "Project description is required",
       });
     }
 
@@ -753,93 +866,101 @@ app.post("/generate-milestones", async (req, res) => {
     `;
 
     // Generate content with Gemini API using fetch
-    const GEMINI_API_KEY = 'AIzaSyC7SAkw_PDHTdnahWu0mnId8DZzIVIyhkg'; // Get from environment variables
+    const GEMINI_API_KEY = "AIzaSyC7SAkw_PDHTdnahWu0mnId8DZzIVIyhkg"; // Get from environment variables
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
-        })
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+        }),
       }
     );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
+      throw new Error(
+        `Gemini API error: ${errorData.error?.message || "Unknown error"}`
+      );
     }
 
     const data = await response.json();
     const text = data.candidates[0].content.parts[0].text;
-    
+
     // Parse the response to get valid JSON
     // Find JSON content between square brackets
     const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    
+
     if (!jsonMatch) {
       return res.status(500).json({
         success: false,
         message: "Failed to generate properly formatted milestones",
-        rawResponse: text
+        rawResponse: text,
       });
     }
-    
+
     const milestones = JSON.parse(jsonMatch[0]);
-    
+
     // Calculate dates based on relative timeframes
     const startDate = new Date();
-    const processedMilestones = milestones.map(milestone => {
+    const processedMilestones = milestones.map((milestone) => {
       // Process the timeEstimate (e.g., "+2 weeks")
       let dueDate = new Date(startDate);
       const timeEstimate = milestone.timeEstimate;
-      
+
       if (timeEstimate) {
-        const match = timeEstimate.match(/\+(\d+)\s+(day|days|week|weeks|month|months)/i);
+        const match = timeEstimate.match(
+          /\+(\d+)\s+(day|days|week|weeks|month|months)/i
+        );
         if (match) {
           const amount = parseInt(match[1]);
           const unit = match[2].toLowerCase();
-          
-          if (unit.startsWith('day')) {
+
+          if (unit.startsWith("day")) {
             dueDate.setDate(dueDate.getDate() + amount);
-          } else if (unit.startsWith('week')) {
-            dueDate.setDate(dueDate.getDate() + (amount * 7));
-          } else if (unit.startsWith('month')) {
+          } else if (unit.startsWith("week")) {
+            dueDate.setDate(dueDate.getDate() + amount * 7);
+          } else if (unit.startsWith("month")) {
             dueDate.setMonth(dueDate.getMonth() + amount);
           }
         }
       }
-      
+
       return {
         ...milestone,
-        date: dueDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
-        formattedDate: dueDate.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        })
+        date: dueDate.toISOString().split("T")[0], // Format as YYYY-MM-DD
+        formattedDate: dueDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
       };
     });
-    
+
     // Calculate total budget
-    const totalAmount = processedMilestones.reduce((sum, milestone) => sum + (parseFloat(milestone.amount) || 0), 0);
-    
+    const totalAmount = processedMilestones.reduce(
+      (sum, milestone) => sum + (parseFloat(milestone.amount) || 0),
+      0
+    );
+
     res.json({
       success: true,
       milestones: processedMilestones,
-      totalAmount
+      totalAmount,
     });
-    
   } catch (error) {
     console.error("Error generating milestones:", error);
     res.status(500).json({
       success: false,
       message: "Failed to generate milestones",
-      error: error.message
+      error: error.message,
     });
   }
 });

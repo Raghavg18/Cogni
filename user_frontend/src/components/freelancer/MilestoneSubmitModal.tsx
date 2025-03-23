@@ -159,9 +159,9 @@ const MilestoneSubmitModal: React.FC<MilestoneSubmitModalProps> = ({
                   type="url"
                   value={formData.hostedUrl}
                   onChange={(e) =>
-                    setFormData((prev) => ({ 
-                      ...prev, 
-                      hostedUrl: e.target.value 
+                    setFormData((prev) => ({
+                      ...prev,
+                      hostedUrl: e.target.value,
                     }))
                   }
                   className="w-full p-3 pl-10 border border-[#e0e0e0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7925ff] focus:border-transparent transition-all"
@@ -211,9 +211,11 @@ const MilestoneSubmitModal: React.FC<MilestoneSubmitModalProps> = ({
                 <Upload className="w-4 h-4 text-[#4f7296]" />
                 Upload Files
               </label>
-              <div 
+              <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                  dragActive ? "border-[#7925ff] bg-[#f2ecff]" : "border-[#e0e0e0]"
+                  dragActive
+                    ? "border-[#7925ff] bg-[#f2ecff]"
+                    : "border-[#e0e0e0]"
                 } transition-all cursor-pointer`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -226,7 +228,8 @@ const MilestoneSubmitModal: React.FC<MilestoneSubmitModalProps> = ({
                     <Upload className="w-5 h-5 text-[#7925ff]" />
                   </div>
                   <p className="text-[#0d141c] font-medium">
-                    Drag and drop files or <span className="text-[#7925ff]">browse</span>
+                    Drag and drop files or{" "}
+                    <span className="text-[#7925ff]">browse</span>
                   </p>
                   <p className="text-xs text-[#4f7296]">
                     Upload any supporting documents, screenshots, or media files
@@ -249,16 +252,16 @@ const MilestoneSubmitModal: React.FC<MilestoneSubmitModalProps> = ({
                   </p>
                   <div className="max-h-32 overflow-y-auto pr-2">
                     {formData.files.map((file, index) => (
-                      <div 
-                        key={index} 
+                      <div
+                        key={index}
                         className="flex justify-between items-center py-2 px-3 bg-[#f7f9fc] rounded-lg text-sm mb-2"
                       >
                         <div className="flex items-center gap-2 overflow-hidden">
                           <FileText className="w-4 h-4 text-[#4f7296] shrink-0" />
                           <span className="truncate">{file.name}</span>
                         </div>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => removeFile(index)}
                           className="text-red-500 hover:bg-red-50 p-1 rounded-full"
                         >
@@ -288,7 +291,8 @@ const MilestoneSubmitModal: React.FC<MilestoneSubmitModalProps> = ({
                 required
               />
               <p className="mt-1 text-xs text-[#4f7296]">
-                Provide details about what you&apos;ve completed and any important information
+                Provide details about what you&apos;ve completed and any
+                important information
               </p>
             </div>
           </div>

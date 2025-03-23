@@ -5,6 +5,7 @@ import MilestoneSubmitModal, {
   MilestoneSubmitData,
 } from "./MilestoneSubmitModal";
 import { Check, Calendar, FileText, AlertTriangle } from "lucide-react";
+import RaiseDisputeModal, { DisputeData } from "./RaiseDisputeModal";
 
 interface TimelineItemProps {
   title: string;
@@ -109,7 +110,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
         <div className="text-sm font-medium mb-4 text-[#4f7296] bg-[#f7f9fc] px-3 py-1 rounded-full">
           {date}
         </div>
-        
+
         {/* Timeline dot with icon */}
         <div
           className={`w-10 h-10 rounded-full ${
@@ -118,18 +119,18 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
         >
           {getStatusIcon()}
         </div>
-        
+
         {/* Status label */}
         <span className={`text-xs font-medium mt-2 ${getStatusTextColor()}`}>
           {getStatusLabel()}
         </span>
-        
+
         {/* Connecting line */}
         {!isLast && (
           <div className="absolute left-1/2 top-24 h-16 w-1 bg-gradient-to-b from-current to-[#f2ecff] transform -translate-x-1/2 -z-10" />
         )}
       </div>
-      
+
       <div className="flex-1 pt-1 bg-white p-5 rounded-xl shadow-sm border border-[#f0f0f5] hover:border-[#7925ff] transition-all duration-200">
         <h3 className="text-[#0c141c] font-semibold text-lg mb-3 group-hover:text-[#7925ff] transition-colors">
           {title}
@@ -168,8 +169,10 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   projectId,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string>("");
-  const [selectedMilestoneAmount, setSelectedMilestoneAmount] = useState<number>();
+  const [selectedMilestoneAmount, setSelectedMilestoneAmount] =
+    useState<number>();
   const [project, setProject] = useState<Project | null>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -301,9 +304,40 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
     } catch (error) {
       console.error("Error submitting milestone:", error);
       if (error instanceof Error) {
-        alert(`Error submitting milestone: ${error.message || "Unknown error"}`);
+        alert(
+          `Error submitting milestone: ${error.message || "Unknown error"}`
+        );
       } else {
         alert("Error submitting milestone: Unknown error");
+      }
+    }
+  };
+
+  const handleDisputeSubmit = async (data: DisputeData) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/disputes",
+        data,
+        {
+          withCredentials: true,
+        }
+      );
+
+      console.log(response.data);
+
+      if (response.data) {
+        alert("Dispute raised successfully");
+        console.log(response);
+        setIsModalOpen(false);
+      } else {
+        throw new Error(response.data.message || "Submission failed");
+      }
+    } catch (error) {
+      console.error("Error raising dispute:", error);
+      if (error instanceof Error) {
+        alert(`Error raising dispute: ${error.message || "Unknown error"}`);
+      } else {
+        alert("Error raising dispute: Unknown error");
       }
     }
   };
@@ -317,7 +351,7 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
   }
 
   // Find the first pending milestone
-  const firstPendingMilestone = milestones.find(m => m.status === "pending");
+  const firstPendingMilestone = milestones.find((m) => m.status === "pending");
 
   return (
     <div className="w-full max-w-[1000px] mx-auto px-4 py-8">
@@ -333,15 +367,21 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
 
       {/* Project Title and Progress */}
       <div className="bg-white rounded-xl shadow-sm border border-[#f0f0f5] p-6 mb-8">
-        <h1 className="text-3xl font-bold text-[#0d141c] mb-6">{project?.name}</h1>
-        
+        <h1 className="text-3xl font-bold text-[#0d141c] mb-6">
+          {project?.name}
+        </h1>
+
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-base font-medium text-[#4f7296]">Project Progress</span>
-            <span className="text-lg font-bold text-[#7925ff]">{progress}%</span>
+            <span className="text-base font-medium text-[#4f7296]">
+              Project Progress
+            </span>
+            <span className="text-lg font-bold text-[#7925ff]">
+              {progress}%
+            </span>
           </div>
           <div className="h-3 w-full bg-[#f2ecff] rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-[#7925ff] rounded-full transition-all duration-1000"
               style={{ width: `${progress}%` }}
             />
@@ -371,8 +411,12 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
       <section className="mt-12 bg-white rounded-xl border border-[#f0f0f5] shadow-sm overflow-hidden mb-8">
         <div className="p-6 border-b border-[#f0f0f5] flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-[#0d141c]">Milestones Timeline</h2>
-            <p className="text-[#4f7296] mt-1">Track your project&apos;s progress through completed milestones</p>
+            <h2 className="text-xl font-bold text-[#0d141c]">
+              Milestones Timeline
+            </h2>
+            <p className="text-[#4f7296] mt-1">
+              Track your project&apos;s progress through completed milestones
+            </p>
           </div>
           {firstPendingMilestone && (
             <button
@@ -413,20 +457,24 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className={`${
-                  milestone.status === "paid" 
-                    ? "bg-[#e6f7e6]" 
-                    : milestone.status === "submitted" 
-                      ? "bg-[#fff5cc]" 
+                <div
+                  className={`${
+                    milestone.status === "paid"
+                      ? "bg-[#e6f7e6]"
+                      : milestone.status === "submitted"
+                      ? "bg-[#fff5cc]"
                       : "bg-[#f2ecff]"
-                } p-3 rounded-lg`}>
-                  <FileText className={`w-6 h-6 ${
-                    milestone.status === "paid" 
-                      ? "text-[#34b233]" 
-                      : milestone.status === "submitted" 
-                        ? "text-[#f59e0b]" 
+                  } p-3 rounded-lg`}
+                >
+                  <FileText
+                    className={`w-6 h-6 ${
+                      milestone.status === "paid"
+                        ? "text-[#34b233]"
+                        : milestone.status === "submitted"
+                        ? "text-[#f59e0b]"
                         : "text-[#7925ff]"
-                  }`} />
+                    }`}
+                  />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-[#0d141c] mb-1">
@@ -438,18 +486,24 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
                     </span>
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      <span className="text-sm">{getFormattedDate(milestone.updatedAt)}</span>
+                      <span className="text-sm">
+                        {getFormattedDate(milestone.updatedAt)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-4"> 
+
+              <div className="flex items-center gap-4">
                 <button className="text-[#4f7296] hover:text-[#7925ff] text-sm font-medium underline">
                   View Details
                 </button>
-                
-                <div className={`${getStatusColor(milestone.status)} px-4 py-2 rounded-lg text-sm font-medium`}>
+
+                <div
+                  className={`${getStatusColor(
+                    milestone.status
+                  )} px-4 py-2 rounded-lg text-sm font-medium`}
+                >
                   {getStatusLabel(milestone.status)}
                 </div>
               </div>
@@ -465,11 +519,18 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
             <AlertTriangle className="w-6 h-6 text-[#f59e0b]" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-[#0d141c] mb-1">Need Help with Your Project?</h3>
-            <p className="text-[#4f7296]">Contact our support team for assistance with your milestones</p>
+            <h3 className="text-lg font-semibold text-[#0d141c] mb-1">
+              Need Help with Your Project?
+            </h3>
+            <p className="text-[#4f7296]">
+              Contact our support team for assistance with your milestones
+            </p>
           </div>
         </div>
-        <button className="bg-white text-[#7925ff] border border-[#7925ff] px-6 py-3 rounded-lg font-medium hover:bg-[#7925ff] hover:text-white transition-colors whitespace-nowrap">
+        <button
+          onClick={() => setDisputeModalOpen(true)}
+          className="bg-white text-[#7925ff] border border-[#7925ff] px-6 py-3 rounded-lg font-medium hover:bg-[#7925ff] hover:text-white transition-colors whitespace-nowrap"
+        >
           Contact Support
         </button>
       </div>
@@ -479,6 +540,15 @@ const MilestoneContainer: React.FC<MilestoneContainerProps> = ({
         onClose={() => setIsModalOpen(false)}
         milestoneAmount={selectedMilestoneAmount || 0}
         onSubmit={(data) => handleMilestoneSubmit(data, selectedMilestoneId)}
+      />
+
+      <RaiseDisputeModal
+        isOpen={disputeModalOpen}
+        onClose={() => setDisputeModalOpen(false)}
+        onSubmit={(data) => {
+          console.log(data);
+          handleDisputeSubmit(data);
+        }}
       />
     </div>
   );

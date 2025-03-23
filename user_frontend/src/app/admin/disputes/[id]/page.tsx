@@ -15,6 +15,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface DisputeData {
+  _id: string;
+  disputeTitle: string;
+  disputeAmount: string;
+}
+
 type DisputeStatus = "pending" | "accepted" | "rejected";
 type DisputeType = "payment" | "service" | "other";
 
@@ -45,43 +51,67 @@ interface DisputePageProps {
 export default function DisputePage({ params }: DisputePageProps) {
   const router = useRouter();
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
-  const [actionType, setActionType] = useState<'approve' | 'close' | null>(null);
+  const [actionType, setActionType] = useState<"approve" | "close" | null>(
+    null
+  );
 
   // Initialize state with proper typing
-  const [localDispute, setLocalDispute] = useState<LocalDispute>(() => ({
-    id: "",
-    title: "Payment not received for Project A",
-    status: "pending",
-    type: "payment",
-    createdAt: "2024-03-21",
-    description: "Client claims payment was sent but not received",
-    details: {
-      amount: "$5,000",
-      clientName: "John Doe",
-      contractorName: "Jane Smith",
-      timeline: [
-        { date: "2024-03-21", event: "Dispute opened" },
-        { date: "2024-03-22", event: "Client response received" },
-      ],
-    },
+  const [localDispute, setLocalDispute] = useState<DisputeData>(() => ({
+    disputeTitle: "",
+    disputeAmount: "",
+    _id: "",
   }));
 
   // Use useEffect to update the ID once params resolve
   useEffect(() => {
     const updateId = async () => {
       const resolvedParams = await params;
-      setLocalDispute(prev => ({ ...prev, id: resolvedParams.id }));
+      setLocalDispute((prev) => ({ ...prev, id: resolvedParams.id }));
     };
     updateId();
   }, [params]);
 
-  // Now the handleDisputeAction will work with proper typing
-  const handleDisputeAction = () => {
-    setLocalDispute((prev) => ({
-      ...prev,
-      status: actionType === 'approve' ? 'accepted' : 'rejected',
-    }));
-    setIsActionDialogOpen(false);
+  useEffect(() => {
+    const fetchDispute = async () => {
+      try {
+        const resolvedParams = await params;
+        console.log("ID: ", resolvedParams);
+        const response = await fetch(
+          `http://localhost:8000/disputes/${resolvedParams.id}`
+        );
+        console.log("RESPPNSE:", response);
+        if (!response.ok) throw new Error("Failed to fetch dispute");
+        const data: DisputeData = await response.json();
+        setLocalDispute(data);
+      } catch (error) {
+        console.error("Error fetching dispute:", error);
+      }
+    };
+
+    fetchDispute();
+  }, [params]);
+
+  const handleDisputeAction = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/disputes/${localDispute._id}/${
+          actionType === "approve" ? "resolve" : "reject"
+        }`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update dispute status");
+
+      const updatedDispute = await response.json();
+      setLocalDispute(updatedDispute.dispute);
+      setIsActionDialogOpen(false);
+      router.push("/admin/disputes");
+    } catch (error) {
+      console.error("Error updating dispute:", error);
+    }
   };
 
   return (
@@ -100,23 +130,12 @@ export default function DisputePage({ params }: DisputePageProps) {
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="[font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-[32px] leading-10 mb-2">
-                  {localDispute.title}
+                  {localDispute.disputeAmount}
                 </h1>
                 <p className="[font-family:'Be_Vietnam_Pro',Helvetica] font-normal text-[#4f7296] text-base">
-                  Dispute ID: {localDispute.id}
+                  Dispute ID: {localDispute._id}
                 </p>
               </div>
-              <Badge
-                className={`rounded-[10px] font-medium ${
-                  localDispute.status === "pending"
-                    ? "bg-[#ffeca0] text-[#0c141c]"
-                    : localDispute.status === "accepted"
-                    ? "bg-[#beffbe] text-[#0c141c]"
-                    : "bg-[#ffd4d4] text-[#991b1b]"
-                }`}
-              >
-                {localDispute.status}
-              </Badge>
             </div>
           </CardHeader>
           <CardContent className="p-6">
@@ -126,7 +145,7 @@ export default function DisputePage({ params }: DisputePageProps) {
                 Description
               </h3>
               <p className="[font-family:'Be_Vietnam_Pro',Helvetica] text-[#4f7296] text-base">
-                {localDispute.description}
+                {localDispute.disputeTitle}
               </p>
             </div>
 
@@ -140,71 +159,40 @@ export default function DisputePage({ params }: DisputePageProps) {
                 </h3>
                 <dl className="space-y-3">
                   <div>
-                    <dt className="text-[#4f7296] text-sm mb-1">Type</dt>
-                    <dd className="[font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-[#0c141c] capitalize">
-                      {localDispute.type}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[#4f7296] text-sm mb-1">Amount in Dispute</dt>
+                    <dt className="text-[#4f7296] text-sm mb-1">
+                      Amount in Dispute
+                    </dt>
                     <dd className="[font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-[#0c141c]">
-                      {localDispute.details.amount}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[#4f7296] text-sm mb-1">Client</dt>
-                    <dd className="[font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-[#0c141c]">
-                      {localDispute.details.clientName}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[#4f7296] text-sm mb-1">Contractor</dt>
-                    <dd className="[font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-[#0c141c]">
-                      {localDispute.details.contractorName}
+                      {localDispute.disputeAmount}
                     </dd>
                   </div>
                 </dl>
               </div>
-              <div>
-                <h3 className="[font-family:'Be_Vietnam_Pro',Helvetica] font-medium text-[#0c141c] text-lg mb-4">
-                  Timeline
-                </h3>
-                <div className="space-y-4">
-                  {localDispute.details.timeline.map((item, index) => (
-                    <div key={index} className="flex gap-4">
-                      <div className="w-24 text-sm text-[#4f7296]">{item.date}</div>
-                      <div className="text-[#0c141c]">{item.event}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            {localDispute.status === "pending" && (
-              <div className="mt-8 flex gap-4 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setActionType('close');
-                    setIsActionDialogOpen(true);
-                  }}
-                  className="bg-[#fff1f1] border-[#ffd4d4] text-[#991b1b] hover:bg-[#ffd4d4] hover:text-[#991b1b] rounded-xl cursor-pointer transition-all duration-200"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Reject Dispute
-                </Button>
-                <Button
-                  onClick={() => {
-                    setActionType('approve');
-                    setIsActionDialogOpen(true);
-                  }}
-                  className="bg-[#7825ff] hover:bg-[#6420cc] text-white rounded-xl cursor-pointer"
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Accept Dispute
-                </Button>
-              </div>
-            )}
+            <div className="mt-8 flex gap-4 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setActionType("close");
+                  setIsActionDialogOpen(true);
+                }}
+                className="bg-[#fff1f1] border-[#ffd4d4] text-[#991b1b] hover:bg-[#ffd4d4] hover:text-[#991b1b] rounded-xl cursor-pointer transition-all duration-200"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Reject Dispute
+              </Button>
+              <Button
+                onClick={() => {
+                  setActionType("approve");
+                  setIsActionDialogOpen(true);
+                }}
+                className="bg-[#7825ff] hover:bg-[#6420cc] text-white rounded-xl cursor-pointer"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Accept Dispute
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -212,10 +200,12 @@ export default function DisputePage({ params }: DisputePageProps) {
           <DialogContent className="bg-white border border-[#e5e8ea] rounded-2xl">
             <DialogHeader>
               <DialogTitle className="[font-family:'Be_Vietnam_Pro',Helvetica] font-bold text-[#0c141c] text-lg">
-                {actionType === 'approve' ? 'Accept Dispute' : 'Reject Dispute'}
+                {actionType === "approve" ? "Accept Dispute" : "Reject Dispute"}
               </DialogTitle>
               <DialogDescription className="[font-family:'Be_Vietnam_Pro',Helvetica] text-[#4f7296]">
-                Are you sure you want to {actionType === 'approve' ? 'accept' : 'reject'} this dispute? This action cannot be undone.
+                Are you sure you want to{" "}
+                {actionType === "approve" ? "accept" : "reject"} this dispute?
+                This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-3">
@@ -229,12 +219,12 @@ export default function DisputePage({ params }: DisputePageProps) {
               <Button
                 onClick={handleDisputeAction}
                 className={`${
-                  actionType === 'approve'
-                    ? 'bg-[#7825ff] hover:bg-[#6420cc] text-white'
-                    : 'bg-[#fff1f1] border-[#ffd4d4] text-[#991b1b] hover:bg-[#ffd4d4]'
+                  actionType === "approve"
+                    ? "bg-[#7825ff] hover:bg-[#6420cc] text-white"
+                    : "bg-[#fff1f1] border-[#ffd4d4] text-[#991b1b] hover:bg-[#ffd4d4]"
                 } rounded-xl cursor-pointer transition-colors duration-200`}
               >
-                {actionType === 'approve' ? 'Accept' : 'Reject'} Dispute
+                {actionType === "approve" ? "Accept" : "Reject"} Dispute
               </Button>
             </DialogFooter>
           </DialogContent>
