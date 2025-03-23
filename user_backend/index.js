@@ -116,7 +116,7 @@ app.post("/login", async (req, res) => {
     );
 
     res.cookie("uuid", token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: true,
       sameSite: "strict",
     });
